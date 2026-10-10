@@ -1,1204 +1,1197 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>نظام الهوية الفلسطينية</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-        :root {
-            box-sizing: border-box;
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            --green: #2e7d32;
-            --green-dark: #1b5e20;
-            --green-light: #e8f5e9;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', Arial, sans-serif; }
-        html, body { height: 100%; background: #000; overflow: hidden; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>نظام الهوية الفلسطينية</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+:root {
+  --green:#2e7d32; --green-d:#1b5e20; --green-l:#e8f5e9;
+  --blue:#1565c0; --red:#b91c1c;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',Arial,sans-serif}
+html,body{height:100%;background:#000;overflow:hidden}
 
-        /* ============================================================
-           واجهة الساعة Samsung Galaxy Watch الرقمية
-        ============================================================ */
-        #screen-clock {
-            position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(ellipse at center, #0a0a0a 0%, #000 100%);
-            z-index: 100;
-        }
-        .watch-bezel {
-            width: min(96vw, 400px); height: min(96vw, 400px);
-            border-radius: 50%;
-            background: linear-gradient(145deg, #2a2a2a, #111, #1f1f1f);
-            box-shadow:
-                0 0 0 3px #333,
-                0 0 0 6px #111,
-                0 0 0 8px #444,
-                inset 0 0 40px rgba(0,0,0,0.8),
-                0 20px 60px rgba(0,0,0,0.9);
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-        }
-        .watch-face {
-            width: 88%; height: 88%;
-            border-radius: 50%;
-            background: #000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .watch-glow {
-            position: absolute; inset: 0; border-radius: 50%;
-            background: radial-gradient(ellipse at 40% 30%, rgba(0,180,255,0.04) 0%, transparent 60%);
-            pointer-events: none;
-        }
-        /* علامات الدقائق */
-        .tick-marks {
-            position: absolute; inset: 0; border-radius: 50%;
-        }
-        .tick-mark {
-            position: absolute; left: 50%; transform-origin: bottom center;
-            width: 2px; background: #333; border-radius: 1px;
-        }
-        /* شريط اللون العلوي */
-        .watch-accent {
-            position: absolute; top: 8%; left: 20%; width: 60%; height: 3px;
-            background: linear-gradient(90deg, transparent, #00aaff, #0066cc, transparent);
-            border-radius: 2px;
-        }
-        /* العنوان الصغير */
-        .watch-label {
-            font-size: min(2.8vw, 11px); color: #666; letter-spacing: 3px;
-            text-transform: uppercase; margin-bottom: 6px; position: relative; z-index:2;
-        }
-        /* الوقت الرئيسي */
-        .watch-time {
-            font-family: 'Segment7', 'Courier New', monospace;
-            font-size: min(22vw, 88px); font-weight: 900; color: #fff;
-            letter-spacing: -4px; line-height: 1; position: relative; z-index: 2;
-            text-shadow: 0 0 20px rgba(255,255,255,0.15),
-                         0 0 60px rgba(0,140,255,0.2);
-        }
-        .watch-time .colon {
-            color: #ccc; animation: blink 1s step-end infinite;
-            display: inline-block; transform: translateY(-4px);
-        }
-        @keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: 0.2 } }
-        .watch-time .dim {
-            color: #555; font-size: 0.7em;
-        }
-        /* الصف الثاني – التاريخ والإضافات */
-        .watch-info-row {
-            display: flex; align-items: center; gap: 18px; margin-top: 8px;
-            position: relative; z-index: 2;
-        }
-        .watch-info-item {
-            text-align: center;
-        }
-        .watch-info-val {
-            font-size: min(4vw, 16px); color: #aaa; font-weight: 600;
-        }
-        .watch-info-lbl {
-            font-size: min(2.2vw, 8px); color: #555; letter-spacing: 1.5px; text-transform: uppercase;
-        }
-        .watch-divider { width: 1px; height: 24px; background: #333; }
-        /* مؤشر النبضة */
-        .watch-pulse {
-            position: absolute; bottom: 14%; left: 50%; transform: translateX(-50%);
-            z-index: 2;
-        }
-        .pulse-bar {
-            display: flex; gap: 2px; align-items: flex-end; height: 14px;
-        }
-        .pulse-bar span {
-            width: 2px; background: #e53935; border-radius: 1px;
-            animation: pulse-anim 1.4s ease-in-out infinite;
-        }
-        .pulse-bar span:nth-child(1) { height: 4px; animation-delay: 0s; }
-        .pulse-bar span:nth-child(2) { height: 9px; animation-delay: 0.1s; }
-        .pulse-bar span:nth-child(3) { height: 14px; animation-delay: 0.2s; }
-        .pulse-bar span:nth-child(4) { height: 6px; animation-delay: 0.3s; }
-        .pulse-bar span:nth-child(5) { height: 12px; animation-delay: 0.4s; }
-        .pulse-bar span:nth-child(6) { height: 8px; animation-delay: 0.5s; }
-        .pulse-bar span:nth-child(7) { height: 4px; animation-delay: 0.6s; }
-        @keyframes pulse-anim {
-            0%, 100% { opacity: 0.4; transform: scaleY(0.7); }
-            50% { opacity: 1; transform: scaleY(1); }
-        }
-        /* أزرار الساعة الجانبية */
-        .watch-btn {
-            position: absolute; right: -5%; width: 8px; background: linear-gradient(180deg, #444, #222, #444);
-            border-radius: 3px; box-shadow: -2px 0 4px rgba(0,0,0,0.5);
-        }
-        .watch-btn-top { top: 30%; height: 18%; }
-        .watch-btn-mid { top: 52%; height: 12%; }
-        /* الإشعار / التوجيه */
+/* ── CLOCK ── */
+#sc-clock{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#090909,#000);z-index:100
+}
+.w-bezel{
+  width:min(94vw,390px);height:min(94vw,390px);border-radius:50%;position:relative;
+  background:linear-gradient(145deg,#2c2c2c,#0f0f0f,#1e1e1e);
+  box-shadow:0 0 0 3px #333,0 0 0 6px #111,0 0 0 8px #3a3a3a,
+             inset 0 2px 4px rgba(255,255,255,0.04),
+             0 20px 60px rgba(0,0,0,0.95);
+  display:flex;align-items:center;justify-content:center
+}
+.w-btn{position:absolute;right:-4%;width:7px;border-radius:3px;
+  background:linear-gradient(180deg,#3a3a3a,#1a1a1a,#3a3a3a);
+  box-shadow:-2px 0 5px rgba(0,0,0,0.6)}
+.w-btn-t{top:28%;height:17%}.w-btn-m{top:50%;height:10%}
+.w-face{
+  width:87%;height:87%;border-radius:50%;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden
+}
+.w-glow{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(ellipse at 40% 28%,rgba(0,160,255,0.05),transparent 60%);
+  pointer-events:none}
+.w-ring{position:absolute;inset:4px;border-radius:50%;
+  border:1px solid rgba(255,255,255,0.04);pointer-events:none}
+.w-accent{position:absolute;top:9%;left:22%;width:56%;height:2px;
+  background:linear-gradient(90deg,transparent,#0099ff,#0055cc,transparent);
+  border-radius:2px}
+.tick-wrap{position:absolute;inset:0;border-radius:50%}
+.tick{position:absolute;left:50%;transform-origin:bottom center;border-radius:1px}
+.w-lbl{font-size:min(2.6vw,10px);color:#555;letter-spacing:3px;
+  text-transform:uppercase;margin-bottom:5px;position:relative;z-index:2}
+.w-time{
+  font-family:'Courier New',monospace;font-size:min(21vw,84px);font-weight:900;
+  color:#fff;letter-spacing:-3px;line-height:1;position:relative;z-index:2;
+  text-shadow:0 0 18px rgba(255,255,255,0.12),0 0 50px rgba(0,130,255,0.18)
+}
+.w-colon{color:#bbb;animation:blink 1s step-end infinite;
+  display:inline-block;transform:translateY(-4px)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.w-info{display:flex;align-items:center;gap:14px;margin-top:7px;position:relative;z-index:2}
+.w-iitem{text-align:center}
+.w-ival{font-size:min(3.8vw,15px);color:#999;font-weight:600}
+.w-ilbl{font-size:min(2vw,7.5px);color:#444;letter-spacing:1.5px;text-transform:uppercase}
+.w-div{width:1px;height:22px;background:#222}
+.w-pulse{position:absolute;bottom:13%;left:50%;transform:translateX(-50%);z-index:2}
+.pulse-bar{display:flex;gap:2px;align-items:flex-end;height:13px}
+.pulse-bar span{width:2px;background:#e53935;border-radius:1px;
+  animation:pb 1.4s ease-in-out infinite}
+.pulse-bar span:nth-child(1){height:3px;animation-delay:0s}
+.pulse-bar span:nth-child(2){height:8px;animation-delay:.1s}
+.pulse-bar span:nth-child(3){height:13px;animation-delay:.2s}
+.pulse-bar span:nth-child(4){height:5px;animation-delay:.3s}
+.pulse-bar span:nth-child(5){height:11px;animation-delay:.4s}
+.pulse-bar span:nth-child(6){height:7px;animation-delay:.5s}
+.pulse-bar span:nth-child(7){height:3px;animation-delay:.6s}
+@keyframes pb{0%,100%{opacity:.35;transform:scaleY(.65)}50%{opacity:1;transform:scaleY(1)}}
+/* battery indicator */
+.w-battery{position:absolute;top:14%;right:18%;z-index:2;
+  display:flex;align-items:center;gap:3px}
+.bat-body{width:18px;height:9px;border:1.5px solid #444;border-radius:2px;
+  position:relative;overflow:hidden}
+.bat-fill{height:100%;width:72%;background:linear-gradient(90deg,#4caf50,#66bb6a)}
+.bat-cap{width:3px;height:5px;background:#444;border-radius:0 1px 1px 0;margin-top:2px}
+.w-battery span{font-size:8px;color:#555;letter-spacing:.5px}
 
+/* ── MENU ── */
+#sc-menu{
+  position:fixed;inset:0;background:linear-gradient(160deg,#090909,#0d1117);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;padding:20px;z-index:90
+}
+.menu-logo{font-size:min(5vw,20px);color:#333;letter-spacing:4px;
+  text-transform:uppercase;margin-bottom:6px;text-align:center}
+.menu-card{
+  width:min(90vw,340px);padding:20px 22px;border-radius:16px;
+  cursor:pointer;display:flex;align-items:center;gap:16px;
+  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden
+}
+.menu-card:active{transform:scale(.97)}
+.mc-front{
+  background:linear-gradient(135deg,#172f1f,#0b1e13);
+  border:1px solid rgba(46,125,50,.4);
+  box-shadow:0 8px 28px rgba(46,125,50,.18)
+}
+.mc-front:hover{box-shadow:0 12px 36px rgba(46,125,50,.32)}
+.mc-back{
+  background:linear-gradient(135deg,#2a1515,#1a0b0b);
+  border:1px solid rgba(220,53,69,.4);
+  box-shadow:0 8px 28px rgba(220,53,69,.15)
+}
+.mc-back:hover{box-shadow:0 12px 36px rgba(220,53,69,.28)}
+.mc-icon{width:50px;height:50px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.mc-icon-f{background:rgba(46,125,50,.22)}
+.mc-icon-b{background:rgba(220,53,69,.22)}
+.mc-text h3{font-size:15px;font-weight:700;margin-bottom:3px}
+.mc-text p{font-size:11px;opacity:.55;line-height:1.5}
+.col-green{color:#81c784}.col-red{color:#ef9a9a}
 
-        /* ============================================================
-           شاشة الاختيار – الزرين
-        ============================================================ */
-        #screen-menu {
-            position: fixed; inset: 0;
-            background: linear-gradient(160deg, #0a0a0a 0%, #0d1117 100%);
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            gap: 28px; padding: 20px; z-index: 90;
-        }
-        .menu-title {
-            color: #aaa; font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
-            text-align: center; margin-bottom: 10px;
-        }
-        .menu-card {
-            width: min(90vw, 340px); padding: 24px 28px;
-            border-radius: 18px; cursor: pointer;
-            display: flex; align-items: center; gap: 18px;
-            transition: transform 0.18s, box-shadow 0.18s;
-            position: relative; overflow: hidden;
-        }
-        .menu-card::before {
-            content: ''; position: absolute; inset: 0;
-            background: rgba(255,255,255,0.03); border-radius: 18px;
-        }
-        .menu-card:active { transform: scale(0.97); }
-        .menu-card-front {
-            background: linear-gradient(135deg, #1a3a2a 0%, #0d2218 100%);
-            border: 1px solid rgba(46,125,50,0.4);
-            box-shadow: 0 8px 32px rgba(46,125,50,0.2), 0 0 0 1px rgba(46,125,50,0.1);
-        }
-        .menu-card-front:hover {
-            box-shadow: 0 12px 40px rgba(46,125,50,0.35), 0 0 0 1px rgba(46,125,50,0.3);
-        }
-        .menu-card-back {
-            background: linear-gradient(135deg, #2a1a1a 0%, #1a0a0a 100%);
-            border: 1px solid rgba(220,53,69,0.4);
-            box-shadow: 0 8px 32px rgba(220,53,69,0.15), 0 0 0 1px rgba(220,53,69,0.1);
-        }
-        .menu-card-back:hover {
-            box-shadow: 0 12px 40px rgba(220,53,69,0.3), 0 0 0 1px rgba(220,53,69,0.3);
-        }
-        .menu-icon {
-            width: 54px; height: 54px; border-radius: 14px;
-            display: flex; align-items: center; justify-content: center; font-size: 26px;
-            flex-shrink: 0;
-        }
-        .icon-front { background: rgba(46,125,50,0.25); }
-        .icon-back  { background: rgba(220,53,69,0.25); }
-        .menu-text h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-        .menu-text p  { font-size: 12px; opacity: 0.6; line-height: 1.5; }
-        .front-text { color: #81c784; }
-        .back-text  { color: #ef9a9a; }
+/* ── SCREENS ── */
+#sc-form,#sc-front,#sc-back{
+  position:fixed;inset:0;display:none;flex-direction:column;
+  background:#f1f5f9;overflow-y:auto;z-index:80
+}
+.top-bar{
+  background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;
+  padding:11px 14px;display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.2)
+}
+.top-bar-back{background:none;border:none;color:#fff;font-size:17px;
+  cursor:pointer;padding:4px 7px;border-radius:7px;transition:background .2s}
+.top-bar-back:hover{background:rgba(255,255,255,.15)}
+.top-bar h1{font-size:14px;font-weight:700;flex:1;text-align:center}
 
-        /* ============================================================
-           شاشة إدخال البيانات + واجهة البطاقة الأمامية
-        ============================================================ */
-        #screen-form, #screen-front, #screen-back {
-            position: fixed; inset: 0; display: none; flex-direction: column;
-            background: #f1f5f9; overflow-y: auto; z-index: 80;
-        }
-        .top-bar {
-            background: linear-gradient(135deg, #1b5e20, #2e7d32);
-            color: #fff; padding: 12px 16px;
-            display: flex; align-items: center; gap: 12px;
-            position: sticky; top: 0; z-index: 10;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-        }
-        .top-bar-back {
-            background: none; border: none; color: #fff; font-size: 18px; cursor: pointer;
-            padding: 4px 8px; border-radius: 8px; transition: background 0.2s;
-        }
-        .top-bar-back:hover { background: rgba(255,255,255,0.15); }
-        .top-bar h1 { font-size: 15px; font-weight: 700; flex: 1; text-align: center; }
+/* ── FORM ── */
+.form-wrap{padding:14px;max-width:800px;margin:0 auto}
+.sec-title{
+  background:#f1f8e9;color:var(--green);padding:8px 13px;border-radius:7px;
+  font-size:13px;font-weight:700;margin:16px 0 10px;border-right:4px solid var(--green)
+}
+.fg{display:grid;grid-template-columns:1fr;gap:11px}
+@media(min-width:600px){.fg{grid-template-columns:1fr 1fr}}
+.fgroup{display:flex;flex-direction:column;gap:4px}
+.fgroup label{font-size:11px;font-weight:600;color:#334155}
+.lb{display:inline-block;padding:1px 5px;font-size:8.5px;border-radius:4px;
+  margin-right:4px;font-weight:700}
+.lb-ar{background:#e8f5e9;color:var(--green)}
+.lb-he{background:#e3f2fd;color:var(--blue)}
+input[type=text]{
+  padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;
+  font-size:12px;outline:none;background:#f8fafc;transition:all .22s
+}
+input[type=text]:focus{border-color:var(--green);background:#fff;
+  box-shadow:0 0 0 3px rgba(46,125,50,.1)}
+.file-box{border:2px dashed var(--green);background:#f9fbf7;
+  padding:13px;border-radius:7px;text-align:center;cursor:pointer;transition:background .2s}
+.file-box:hover{background:#f1f8e9}
+.photo-prev{width:78px;height:98px;border:2px solid #e2e8f0;
+  border-radius:5px;margin:7px auto 0;display:none;object-fit:cover}
+.btn-primary{
+  background:var(--green);color:#fff;border:none;padding:12px 18px;
+  border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;
+  width:100%;margin-top:18px;box-shadow:0 4px 12px rgba(46,125,50,.22);
+  transition:background .22s
+}
+.btn-primary:hover{background:var(--green-d)}
+.save-notice{
+  font-size:10px;color:#64748b;text-align:center;
+  margin-top:7px;padding:5px;background:#f1f5f9;border-radius:5px;transition:all .3s
+}
+.save-notice.ok{color:var(--green);background:var(--green-l)}
 
-        /* --- نموذج البيانات --- */
-        .form-wrap { padding: 16px; max-width: 800px; margin: 0 auto; }
-        .section-title {
-            background: #f1f8e9; color: var(--green);
-            padding: 9px 14px; border-radius: 8px;
-            font-size: 14px; font-weight: 700;
-            margin: 18px 0 12px; border-right: 4px solid var(--green);
-        }
-        .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media(min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 12px; font-weight: 600; color: #334155; }
-        .lang-badge {
-            display: inline-block; padding: 1px 5px; font-size: 9px;
-            border-radius: 4px; margin-right: 4px; font-weight: 700;
-        }
-        .ar-badge { background: #e8f5e9; color: var(--green); }
-        .he-badge { background: #e3f2fd; color: #1565c0; }
-        input[type="text"] {
-            padding: 9px 11px; border: 1.5px solid #cbd5e1;
-            border-radius: 8px; font-size: 13px; outline: none;
-            background: #f8fafc; transition: all 0.25s;
-        }
-        input[type="text"]:focus {
-            border-color: var(--green); background: #fff;
-            box-shadow: 0 0 0 3px rgba(46,125,50,0.12);
-        }
-        .file-upload-box {
-            border: 2px dashed var(--green); background: #f9fbf7;
-            padding: 14px; border-radius: 8px; text-align: center;
-            cursor: pointer; transition: background 0.2s;
-        }
-        .file-upload-box:hover { background: #f1f8e9; }
-        .photo-preview {
-            width: 80px; height: 100px; border: 2px solid #e2e8f0;
-            border-radius: 6px; margin: 8px auto 0; display: none; object-fit: cover;
-        }
-        .btn-primary {
-            background: var(--green); color: #fff; border: none;
-            padding: 13px 20px; border-radius: 10px; font-size: 15px;
-            font-weight: 700; cursor: pointer; width: 100%; margin-top: 22px;
-            box-shadow: 0 4px 12px rgba(46,125,50,0.25); transition: background 0.25s;
-        }
-        .btn-primary:hover { background: var(--green-dark); }
-        .auto-save-notice {
-            font-size: 11px; color: #64748b; text-align: center;
-            margin-top: 8px; padding: 6px; background: #f1f5f9; border-radius: 6px;
-        }
-        .auto-save-notice.saved {
-            color: var(--green); background: var(--green-light);
-        }
+/* ── EDITOR TOP BAR ── */
+.ed-bar{
+  background:#1a2332;color:#fff;padding:7px 10px;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.3)
+}
+.ed-bar button{
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);
+  color:#fff;padding:5px 10px;border-radius:6px;font-size:11px;
+  cursor:pointer;font-weight:600;transition:background .18s;white-space:nowrap
+}
+.ed-bar button:hover{background:rgba(255,255,255,.18)}
+.ed-bar .sp{flex:1}
 
-        /* ============================================================
-           واجهة محرر البطاقة (أمامية وخلفية)
-        ============================================================ */
-        .editor-top-bar {
-            background: #1e293b; color: #fff;
-            padding: 8px 12px; display: flex; align-items: center; gap: 8px;
-            position: sticky; top: 0; z-index: 20;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .editor-top-bar button {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 6px 12px; border-radius: 7px; font-size: 12px;
-            cursor: pointer; font-weight: 600; transition: background 0.2s;
-        }
-        .editor-top-bar button:hover { background: rgba(255,255,255,0.2); }
-        .editor-top-bar .spacer { flex: 1; }
+/* ── ZOOM BAR ── */
+.zoom-bar{
+  background:#111827;padding:6px 12px;display:flex;
+  align-items:center;gap:8px;border-bottom:1px solid #1f2937
+}
+.zoom-bar button{
+  background:#1f2937;border:1px solid #374151;color:#9ca3af;
+  width:28px;height:28px;border-radius:6px;font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0
+}
+.zoom-bar button:hover{background:#374151;color:#fff}
+.zoom-label{
+  font-size:12px;color:#6b7280;min-width:44px;text-align:center;
+  font-weight:600;background:#1f2937;padding:3px 8px;border-radius:5px;
+  border:1px solid #374151
+}
+.zoom-bar input[type=range]{
+  flex:1;accent-color:#3b82f6;height:4px;cursor:pointer;min-width:60px
+}
+.zoom-bar .zsp{flex:1}
+.zoom-fit-btn{
+  background:#1f2937;border:1px solid #374151;color:#9ca3af;
+  padding:3px 8px;border-radius:6px;font-size:10px;
+  cursor:pointer;transition:all .15s;white-space:nowrap
+}
+.zoom-fit-btn:hover{background:#374151;color:#fff}
 
-        .editor-body { padding: 10px; }
-        .editor-layout { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media(min-width: 900px) { .editor-layout { grid-template-columns: 260px 1fr; } }
+/* ── EDITOR LAYOUT ── */
+.ed-body{padding:8px}
+.ed-layout{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:860px){.ed-layout{grid-template-columns:270px 1fr}}
 
-        .control-panel {
-            background: #fff; border: 1px solid #e2e8f0;
-            border-radius: 12px; padding: 14px;
-        }
-        .control-panel h3 {
-            font-size: 13px; color: #1e293b;
-            border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;
-        }
-        .control-group { margin-bottom: 13px; }
-        .control-group label {
-            display: block; font-size: 11px; font-weight: 600;
-            color: #475569; margin-bottom: 5px;
-        }
-        .control-group input[type="range"] { width: 100%; accent-color: var(--green); }
+/* ── CONTROL PANEL ── */
+.ctrl-panel{
+  background:#fff;border:1px solid #e2e8f0;border-radius:11px;
+  padding:13px;height:fit-content
+}
+.ctrl-panel h3{font-size:12px;color:#1e293b;border-bottom:1px solid #e2e8f0;
+  padding-bottom:7px;margin-bottom:11px;font-weight:700}
+.sel-ind{
+  font-size:10px;color:var(--green);font-weight:700;margin-bottom:9px;
+  text-align:center;background:var(--green-l);padding:5px;border-radius:5px;display:none
+}
+/* numeric display for each control */
+.cg{margin-bottom:11px}
+.cg label{display:block;font-size:10px;font-weight:600;color:#475569;margin-bottom:4px}
+.cg-row{display:flex;align-items:center;gap:6px}
+.cg-row input[type=range]{flex:1;accent-color:var(--green)}
+.cg-val{
+  font-family:'Courier New',monospace;font-size:11px;font-weight:700;
+  color:#1e293b;background:#f1f5f9;border:1px solid #cbd5e1;
+  border-radius:5px;padding:2px 6px;min-width:38px;text-align:center
+}
+/* step-size selector */
+.step-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.step-pill{
+  padding:2px 8px;border:1px solid #cbd5e1;border-radius:20px;
+  font-size:10px;cursor:pointer;background:#f8fafc;
+  transition:all .15s;font-weight:600;color:#475569
+}
+.step-pill.active{background:var(--green);color:#fff;border-color:var(--green)}
+/* position display */
+.pos-display{
+  font-family:'Courier New',monospace;font-size:10px;color:#64748b;
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;
+  padding:4px 8px;text-align:center;margin-bottom:8px
+}
+/* nudge pad */
+.nudge-wrap{text-align:center}
+.nudge-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:5px;width:120px;margin:7px auto
+}
+.nb{
+  background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;
+  padding:7px;font-size:14px;cursor:pointer;text-align:center;
+  transition:all .15s;font-weight:700;color:#334155
+}
+.nb:hover{background:#e2e8f0}
+.nb:active{background:#334155;color:#fff}
+.nb-center{
+  font-size:9px;display:flex;align-items:center;justify-content:center;
+  color:#94a3b8;font-weight:600
+}
+/* coord inputs */
+.coord-row{display:flex;gap:6px;margin-top:8px}
+.coord-box{flex:1;display:flex;flex-direction:column;gap:3px}
+.coord-box label{font-size:9px;color:#94a3b8;font-weight:600}
+.coord-box input{
+  font-family:'Courier New',monospace;font-size:11px;
+  padding:4px 6px;border:1px solid #e2e8f0;border-radius:5px;
+  background:#f8fafc;text-align:center;outline:none;width:100%
+}
+.coord-box input:focus{border-color:var(--green);background:#fff}
+/* color picker for text */
+.cg-color{display:flex;align-items:center;gap:6px}
+.cg-color input[type=color]{
+  width:28px;height:28px;border:none;border-radius:5px;
+  cursor:pointer;padding:0;background:none
+}
 
-        .selected-indicator {
-            font-size: 11px; color: var(--green); font-weight: 700;
-            margin-bottom: 10px; text-align: center; background: var(--green-light);
-            padding: 5px; border-radius: 6px; display: none;
-        }
+/* ── WORKSPACE ── */
+.ws-container{
+  width:100%;overflow:hidden;border:2px solid #cbd5e1;
+  border-radius:11px;background:#0f172a;
+  display:flex;justify-content:center;align-items:flex-start;
+  position:relative;
+}
+.ws-viewport{
+  overflow:auto;width:100%;
+  /* custom scrollbar */
+  scrollbar-width:thin;scrollbar-color:#334155 #0f172a
+}
+.ws-viewport::-webkit-scrollbar{width:6px;height:6px}
+.ws-viewport::-webkit-scrollbar-track{background:#0f172a}
+.ws-viewport::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+.ws-inner{
+  display:flex;align-items:flex-start;justify-content:flex-start;
+  padding:12px;min-height:100%;
+  transform-origin:top right;
+}
+.workspace{
+  position:relative;flex-shrink:0;
+  background-size:100% 100%;background-repeat:no-repeat;
+  box-shadow:0 8px 32px rgba(0,0,0,.5)
+}
+#ws-front{width:1000px;height:673px;background-image:url('https://i.imgur.com/hMWt9ZW.png')}
+#ws-back {width:1000px;height:673px;background-image:url('https://i.imgur.com/KUnXr6A.png')}
 
-        .nudge-container {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 6px; width: 130px; margin: 10px auto;
-        }
-        .nudge-btn {
-            background: #e2e8f0; border: none; border-radius: 6px;
-            padding: 7px; font-size: 14px; cursor: pointer; text-align: center;
-            transition: background 0.2s;
-        }
-        .nudge-btn:hover  { background: #94a3b8; }
-        .nudge-btn:active { background: #64748b; color: #fff; }
+.draggable{
+  position:absolute;cursor:move;user-select:none;
+  padding:1px 4px;border:1px dashed transparent;
+  text-align:right;direction:rtl;line-height:1.1
+}
+.ar-el{font-family:'Arial',sans-serif;font-weight:bold}
+.he-el{font-family:'Arial Hebrew','Arial',sans-serif;font-weight:bold}
+.draggable.selected{
+  border-color:#ef4444;background:rgba(239,68,68,.09);
+  border-radius:3px;z-index:999
+}
+#front-img{width:172px;height:226px;object-fit:cover;
+  border:1px solid #1e293b;display:none}
+.back-serial{
+  position:absolute;color:#cc0000;font-weight:900;
+  font-family:'Arial',monospace;cursor:move;
+  user-select:none;border:1px dashed transparent
+}
+.back-serial.selected{
+  border-color:#ef4444;background:rgba(239,68,68,.07);
+  border-radius:3px;z-index:999
+}
 
-        .workspace-container {
-            width: 100%; overflow-x: auto; border: 2px solid #cbd5e1;
-            border-radius: 12px; background: #e2e8f0; padding: 12px;
-            display: flex; justify-content: center; align-items: flex-start;
-        }
-        .workspace {
-            position: relative; flex-shrink: 0;
-            background-size: 100% 100%; background-repeat: no-repeat;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-        #ws-front { width: 1000px; height: 673px; background-image: url('https://i.imgur.com/hMWt9ZW.png'); }
-        #ws-back  { width: 1000px; height: 673px; background-image: url('https://i.imgur.com/KUnXr6A.png'); }
+/* ── ACTION BTNS ── */
+.act-btns{display:flex;flex-wrap:wrap;gap:7px;
+  margin-top:10px;justify-content:center;padding-bottom:16px}
+.btn{padding:8px 15px;border:none;border-radius:7px;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.btn-green{background:#28a745;color:#fff}.btn-green:hover{background:#218838}
+.btn-rd{background:#dc3545;color:#fff}.btn-rd:hover{background:#b02a37}
+.btn-pu{background:#6f42c1;color:#fff}.btn-pu:hover{background:#5a32a3}
+.btn-gray{background:#64748b;color:#fff}.btn-gray:hover{background:#475569}
 
-        .draggable {
-            position: absolute; cursor: move; user-select: none;
-            padding: 1px 4px; border: 1px dashed transparent;
-            text-align: right; direction: rtl; line-height: 1.1;
-        }
-        .ar-element { font-family: 'Arial', sans-serif; font-weight: bold; }
-        .he-element { font-family: 'Arial Hebrew', 'Arial', sans-serif; font-weight: bold; }
-        .draggable.selected {
-            border-color: #ef4444; background: rgba(239,68,68,0.1);
-            border-radius: 3px; z-index: 999;
-        }
-        #front-img {
-            width: 172px; height: 226px; object-fit: cover;
-            border: 1px solid #1e293b; display: none;
-        }
-        /* الرقم الأحمر في الخلفية */
-        .back-red-number {
-            position: absolute; color: #cc0000; font-weight: 900;
-            font-family: 'Arial', monospace; letter-spacing: 2px; cursor: move;
-            user-select: none; border: 1px dashed transparent;
-        }
-        .back-red-number.selected {
-            border-color: #ef4444; background: rgba(239,68,68,0.08);
-            border-radius: 3px; z-index: 999;
-        }
-
-        /* أزرار الإجراءات */
-        .action-btns {
-            display: flex; flex-wrap: wrap; gap: 8px;
-            margin-top: 12px; justify-content: center; padding-bottom: 20px;
-        }
-        .btn {
-            padding: 9px 16px; border: none; border-radius: 8px;
-            font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-gray  { background: #64748b; color: #fff; }
-        .btn-gray:hover  { background: #475569; }
-        .btn-green { background: #28a745; color: #fff; }
-        .btn-green:hover { background: #218838; }
-        .btn-blue  { background: #007bff; color: #fff; }
-        .btn-blue:hover  { background: #0056b3; }
-        .btn-red   { background: #dc3545; color: #fff; }
-        .btn-red:hover   { background: #b02a37; }
-        .btn-purple{ background: #6f42c1; color: #fff; }
-        .btn-purple:hover{ background: #5a32a3; }
-
-        /* نافذة المشاركة */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            display: none; align-items: center; justify-content: center; z-index: 200;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-box {
-            background: #fff; border-radius: 18px; padding: 24px; width: min(90vw, 380px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        }
-        .modal-box h3 {
-            font-size: 16px; color: #1e293b; margin-bottom: 16px; text-align: center;
-        }
-        .modal-preview {
-            width: 100%; border-radius: 10px; border: 1px solid #e2e8f0;
-            margin-bottom: 16px; display: block; max-height: 200px; object-fit: contain;
-        }
-        .modal-actions { display: flex; flex-direction: column; gap: 10px; }
-        .modal-btn {
-            padding: 12px 16px; border: none; border-radius: 10px; font-size: 14px;
-            font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s;
-        }
-        .modal-btn-img  { background: #007bff; color: #fff; }
-        .modal-btn-img:hover  { background: #0056b3; }
-        .modal-btn-pdf  { background: #dc3545; color: #fff; }
-        .modal-btn-pdf:hover  { background: #b02a37; }
-        .modal-btn-share{ background: #25d366; color: #fff; }
-        .modal-btn-share:hover{ background: #128c7e; }
-        .modal-btn-close{ background: #e2e8f0; color: #475569; }
-        .modal-btn-close:hover{ background: #cbd5e1; }
-    </style>
+/* ── SHARE MODAL ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:none;align-items:center;justify-content:center;z-index:200
+}
+.overlay.on{display:flex}
+.modal{
+  background:#fff;border-radius:16px;padding:22px;
+  width:min(90vw,370px);box-shadow:0 20px 60px rgba(0,0,0,.4)
+}
+.modal h3{font-size:15px;color:#1e293b;margin-bottom:14px;text-align:center}
+.mprev{width:100%;border-radius:9px;border:1px solid #e2e8f0;
+  margin-bottom:14px;display:block;max-height:180px;object-fit:contain}
+.macts{display:flex;flex-direction:column;gap:8px}
+.mbtn{padding:11px;border:none;border-radius:9px;font-size:13px;
+  font-weight:700;cursor:pointer;width:100%;transition:all .18s}
+.mb-img{background:#007bff;color:#fff}.mb-img:hover{background:#0056b3}
+.mb-pdf{background:#dc3545;color:#fff}.mb-pdf:hover{background:#b02a37}
+.mb-sh{background:#25d366;color:#fff}.mb-sh:hover{background:#128c7e}
+.mb-cl{background:#e2e8f0;color:#475569}.mb-cl:hover{background:#cbd5e1}
+</style>
 </head>
 <body>
 
-<!-- ===== شاشة الساعة ===== -->
-<div id="screen-clock">
-    <div class="watch-bezel">
-        <!-- أزرار جانبية -->
-        <div class="watch-btn watch-btn-top"></div>
-        <div class="watch-btn watch-btn-mid"></div>
-        <div class="watch-face">
-            <div class="watch-glow"></div>
-            <div class="watch-accent"></div>
-            <!-- علامات الدقائق تُبنى بـ JS -->
-            <div class="tick-marks" id="tick-marks"></div>
-            <div class="watch-label">SAMSUNG</div>
-            <div class="watch-time">
-                <span id="clock-h">03</span><span class="colon">:</span><span id="clock-m">18</span>
-            </div>
-            <div class="watch-info-row">
-                <div class="watch-info-item">
-                    <div class="watch-info-val" id="clock-date">--</div>
-                    <div class="watch-info-lbl">DATE</div>
-                </div>
-                <div class="watch-divider"></div>
-                <div class="watch-info-item">
-                    <div class="watch-info-val" id="clock-day">---</div>
-                    <div class="watch-info-lbl">DAY</div>
-                </div>
-                <div class="watch-divider"></div>
-                <div class="watch-info-item">
-                    <div class="watch-info-val" id="clock-steps">7,240</div>
-                    <div class="watch-info-lbl">STEPS</div>
-                </div>
-            </div>
-            <div class="watch-pulse">
-                <div class="pulse-bar">
-                    <span></span><span></span><span></span><span></span>
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
+<!-- CLOCK -->
+<div id="sc-clock">
+  <div class="w-bezel">
+    <div class="w-btn w-btn-t"></div>
+    <div class="w-btn w-btn-m"></div>
+    <div class="w-face">
+      <div class="w-glow"></div>
+      <div class="w-ring"></div>
+      <div class="w-accent"></div>
+      <div class="tick-wrap" id="ticks"></div>
+      <div class="w-battery">
+        <div class="bat-body"><div class="bat-fill"></div></div>
+        <div class="bat-cap"></div>
+        <span>72%</span>
+      </div>
+      <div class="w-lbl">SAMSUNG</div>
+      <div class="w-time">
+        <span id="ck-h">03</span><span class="w-colon">:</span><span id="ck-m">18</span>
+      </div>
+      <div class="w-info">
+        <div class="w-iitem">
+          <div class="w-ival" id="ck-date">--</div>
+          <div class="w-ilbl">DATE</div>
         </div>
+        <div class="w-div"></div>
+        <div class="w-iitem">
+          <div class="w-ival" id="ck-day">---</div>
+          <div class="w-ilbl">DAY</div>
+        </div>
+        <div class="w-div"></div>
+        <div class="w-iitem">
+          <div class="w-ival">7,240</div>
+          <div class="w-ilbl">STEPS</div>
+        </div>
+      </div>
+      <div class="w-pulse">
+        <div class="pulse-bar">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+      </div>
     </div>
-
+  </div>
 </div>
 
-<!-- ===== شاشة الاختيار ===== -->
-<div id="screen-menu">
-    <div class="menu-title">اختر ما تريد</div>
-    <div class="menu-card menu-card-front" onclick="showForm()">
-        <div class="menu-icon icon-front">🪪</div>
-        <div class="menu-text">
-            <h3 class="front-text">الواجهة الأمامية</h3>
-            <p style="color:#aaa">إدخال البيانات وتصميم البطاقة الأمامية</p>
-        </div>
+<!-- MENU -->
+<div id="sc-menu">
+  <div class="menu-logo">🇵🇸 &nbsp; ID SYSTEM</div>
+  <div class="menu-card mc-front" onclick="showForm()">
+    <div class="mc-icon mc-icon-f">🪪</div>
+    <div class="mc-text">
+      <h3 class="col-green">الواجهة الأمامية</h3>
+      <p style="color:#aaa">إدخال البيانات وتصميم البطاقة الأمامية</p>
     </div>
-    <div class="menu-card menu-card-back" onclick="showBack()">
-        <div class="menu-icon icon-back">🔴</div>
-        <div class="menu-text">
-            <h3 class="back-text">الواجهة الخلفية</h3>
-            <p style="color:#aaa">عرض خلفية البطاقة مع الرقم العشوائي</p>
-        </div>
+  </div>
+  <div class="menu-card mc-back" onclick="showBack()">
+    <div class="mc-icon mc-icon-b">🔴</div>
+    <div class="mc-text">
+      <h3 class="col-red">الواجهة الخلفية</h3>
+      <p style="color:#aaa">خلفية البطاقة مع الرقم العشوائي الأحمر</p>
     </div>
+  </div>
 </div>
 
-<!-- ===== شاشة إدخال البيانات ===== -->
-<div id="screen-form">
-    <div class="top-bar">
-        <button class="top-bar-back" onclick="showMenu()">←</button>
-        <h1>إدخال بيانات الهوية</h1>
+<!-- FORM -->
+<div id="sc-form">
+  <div class="top-bar">
+    <button class="top-bar-back" onclick="showMenu()">←</button>
+    <h1>إدخال بيانات الهوية</h1>
+  </div>
+  <div class="form-wrap">
+    <div class="save-notice" id="sn">• البيانات تُحفظ تلقائياً عند الإدخال</div>
+    <div class="sec-title">الصورة الشخصية ورقم الهوية</div>
+    <div class="fg">
+      <div class="fgroup">
+        <label>الصورة الشخصية:</label>
+        <div class="file-box" onclick="document.getElementById('pi').click()">
+          <span id="ptxt" style="font-size:12px;color:#556b2f">اضغط لاختيار صورة</span>
+          <input type="file" id="pi" accept="image/*" style="display:none">
+          <img id="pp" class="photo-prev">
+        </div>
+      </div>
+      <div class="fgroup" style="justify-content:center">
+        <label>رقم الهوية (9 خانات):</label>
+        <input type="text" id="id-num" value="406064576">
+      </div>
     </div>
-    <div class="form-wrap">
-        <div class="auto-save-notice" id="auto-save-notice">• البيانات تُحفظ تلقائياً عند الإدخال</div>
-
-        <!-- الصورة ورقم الهوية -->
-        <div class="section-title">الصورة الشخصية ورقم الهوية</div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label>الصورة الشخصية:</label>
-                <div class="file-upload-box" onclick="document.getElementById('photo-input').click()">
-                    <span id="upload-text" style="font-size:12px; color:#556b2f;">اضغط هنا لاختيار صورة</span>
-                    <input type="file" id="photo-input" accept="image/*" style="display:none">
-                    <img id="photo-preview" class="photo-preview">
-                </div>
-            </div>
-            <div class="form-group" style="justify-content:center">
-                <label>رقم الهوية (9 خانات):</label>
-                <input type="text" id="id-number" value="406064576" placeholder="406064576">
-            </div>
-        </div>
-
-        <!-- الأسماء -->
-        <div class="section-title">بيانات الاسم والنسب</div>
-        <div class="form-grid">
-            <div class="form-group"><label>الاسم <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="first-name-ar" value="مروة"></div>
-            <div class="form-group"><label>الاسم <span class="lang-badge he-badge">עברית</span></label><input type="text" id="first-name-he" value="מרוה" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>اسم الأب <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="father-name-ar" value="رائد"></div>
-            <div class="form-group"><label>اسم الأب <span class="lang-badge he-badge">עברית</span></label><input type="text" id="father-name-he" value="ראיד" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>اسم الجد <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="grand-name-ar" value="عبد العزيز"></div>
-            <div class="form-group"><label>اسم الجد <span class="lang-badge he-badge">עברית</span></label><input type="text" id="grand-name-he" value="עבד אלעזיז" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>اسم العائلة <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="family-name-ar" value="يونس"></div>
-            <div class="form-group"><label>اسم العائلة <span class="lang-badge he-badge">עברית</span></label><input type="text" id="family-name-he" value="יונס" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>اسم الأم <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="mother-name-ar" value="عليه"></div>
-            <div class="form-group"><label>اسم الأم <span class="lang-badge he-badge">עברית</span></label><input type="text" id="mother-name-he" value="עליה" style="direction:ltr;text-align:left"></div>
-        </div>
-
-        <!-- التفاصيل الشخصية -->
-        <div class="section-title">التفاصيل الشخصية والإصدار</div>
-        <div class="form-grid">
-            <div class="form-group"><label>تاريخ الميلاد <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="dob-ar" value="30/07/2000"></div>
-            <div class="form-group"><label>تاريخ الميلاد <span class="lang-badge he-badge">עברית</span></label><input type="text" id="dob-he" value="30/07/2000" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>مكان الولادة <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="pob-ar" value="خان يونس"></div>
-            <div class="form-group"><label>مكان الولادة <span class="lang-badge he-badge">עברית</span></label><input type="text" id="pob-he" value="חאן יונס" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>الجنس <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="gender-ar" value="أنثى"></div>
-            <div class="form-group"><label>الجنس <span class="lang-badge he-badge">עברית</span></label><input type="text" id="gender-he" value="נקבה" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>الديانة <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="religion-ar" value="مسلمة"></div>
-            <div class="form-group"><label>الديانة <span class="lang-badge he-badge">עברית</span></label><input type="text" id="religion-he" value="מוסלמי" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>مكان الإصدار <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="issue-place-ar" value="خان يونس"></div>
-            <div class="form-group"><label>مكان الإصدار <span class="lang-badge he-badge">עברית</span></label><input type="text" id="issue-place-he" value="חן יונס" style="direction:ltr;text-align:left"></div>
-            <div class="form-group"><label>تاريخ الإصدار <span class="lang-badge ar-badge">عربي</span></label><input type="text" id="issue-date-ar" value="10/11/2015"></div>
-            <div class="form-group"><label>تاريخ الإصدار <span class="lang-badge he-badge">עברית</span></label><input type="text" id="issue-date-he" value="10/11/2015" style="direction:ltr;text-align:left"></div>
-        </div>
-
-        <button class="btn-primary" onclick="goToFront()">عرض تصميم البطاقة الأمامية ◀</button>
-        <div class="auto-save-notice" style="margin-top:8px" id="save-status">✅ آخر حفظ: لم يُحفظ بعد</div>
+    <div class="sec-title">بيانات الاسم والنسب</div>
+    <div class="fg">
+      <div class="fgroup"><label>الاسم <span class="lb lb-ar">عربي</span></label><input type="text" id="fn-ar" value="مروة"></div>
+      <div class="fgroup"><label>الاسم <span class="lb lb-he">עברית</span></label><input type="text" id="fn-he" value="מרוה" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>اسم الأب <span class="lb lb-ar">عربي</span></label><input type="text" id="dad-ar" value="رائد"></div>
+      <div class="fgroup"><label>اسم الأب <span class="lb lb-he">עברית</span></label><input type="text" id="dad-he" value="ראיד" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>اسم الجد <span class="lb lb-ar">عربي</span></label><input type="text" id="gd-ar" value="عبد العزيز"></div>
+      <div class="fgroup"><label>اسم الجد <span class="lb lb-he">עברית</span></label><input type="text" id="gd-he" value="עבד אלעזיז" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>العائلة <span class="lb lb-ar">عربي</span></label><input type="text" id="fam-ar" value="يونس"></div>
+      <div class="fgroup"><label>العائلة <span class="lb lb-he">עברית</span></label><input type="text" id="fam-he" value="יונס" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>اسم الأم <span class="lb lb-ar">عربي</span></label><input type="text" id="mom-ar" value="عليه"></div>
+      <div class="fgroup"><label>اسم الأم <span class="lb lb-he">עברית</span></label><input type="text" id="mom-he" value="עליה" style="direction:ltr;text-align:left"></div>
     </div>
+    <div class="sec-title">التفاصيل الشخصية والإصدار</div>
+    <div class="fg">
+      <div class="fgroup"><label>تاريخ الميلاد <span class="lb lb-ar">عربي</span></label><input type="text" id="dob-ar" value="30/07/2000"></div>
+      <div class="fgroup"><label>تاريخ الميلاد <span class="lb lb-he">עברית</span></label><input type="text" id="dob-he" value="30/07/2000" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>مكان الولادة <span class="lb lb-ar">عربي</span></label><input type="text" id="pob-ar" value="خان يونس"></div>
+      <div class="fgroup"><label>مكان الولادة <span class="lb lb-he">עברית</span></label><input type="text" id="pob-he" value="חאן יונס" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>الجنس <span class="lb lb-ar">عربي</span></label><input type="text" id="gen-ar" value="أنثى"></div>
+      <div class="fgroup"><label>الجنس <span class="lb lb-he">עברית</span></label><input type="text" id="gen-he" value="נקבה" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>الديانة <span class="lb lb-ar">عربي</span></label><input type="text" id="rel-ar" value="مسلمة"></div>
+      <div class="fgroup"><label>الديانة <span class="lb lb-he">עברית</span></label><input type="text" id="rel-he" value="מוסלמי" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>مكان الإصدار <span class="lb lb-ar">عربي</span></label><input type="text" id="ip-ar" value="خان يونس"></div>
+      <div class="fgroup"><label>مكان الإصدار <span class="lb lb-he">עברית</span></label><input type="text" id="ip-he" value="חן יונס" style="direction:ltr;text-align:left"></div>
+      <div class="fgroup"><label>تاريخ الإصدار <span class="lb lb-ar">عربي</span></label><input type="text" id="id-ar" value="10/11/2015"></div>
+      <div class="fgroup"><label>تاريخ الإصدار <span class="lb lb-he">עברית</span></label><input type="text" id="id-he" value="10/11/2015" style="direction:ltr;text-align:left"></div>
+    </div>
+    <button class="btn-primary" onclick="goFront()">عرض البطاقة الأمامية ◀</button>
+    <div class="save-notice" id="ss" style="margin-top:7px">✅ آخر حفظ: لم يُحفظ بعد</div>
+  </div>
 </div>
 
-<!-- ===== شاشة البطاقة الأمامية ===== -->
-<div id="screen-front">
-    <div class="editor-top-bar">
-        <button onclick="showMenu()">← القائمة</button>
-        <button onclick="showForm()">✏️ تعديل البيانات</button>
-        <span class="spacer"></span>
-        <button onclick="openShareModal('front')" style="background: rgba(0,123,255,0.3);">📤 مشاركة</button>
-    </div>
-    <div class="editor-body">
-        <div class="editor-layout">
-            <div class="control-panel">
-                <h3>🎛️ أدوات التعديل</h3>
-                <div id="selected-indicator-f" class="selected-indicator">
-                    العنصر: <span id="active-el-name-f">—</span>
-                </div>
-                <div class="control-group">
-                    <label>حجم الخط / الحجم:</label>
-                    <input type="range" id="fontSize-ctrl-f" min="10" max="60" value="18">
-                </div>
-                <div class="control-group">
-                    <label>الشفافية:</label>
-                    <input type="range" id="opacity-ctrl-f" min="0" max="1" step="0.05" value="1">
-                </div>
-                <div class="control-group">
-                    <label>تغبيش (Blur):</label>
-                    <input type="range" id="blur-ctrl-f" min="0" max="5" step="0.1" value="0">
-                </div>
-                <div class="control-group" style="text-align:center">
-                    <label>تحريك دقيق:</label>
-                    <div class="nudge-container">
-                        <div></div>
-                        <button class="nudge-btn" onclick="nudgeF('up')">▲</button>
-                        <div></div>
-                        <button class="nudge-btn" onclick="nudgeF('right')">▶</button>
-                        <div style="font-size:10px;display:flex;align-items:center;justify-content:center;color:#94a3b8">↔</div>
-                        <button class="nudge-btn" onclick="nudgeF('left')">◀</button>
-                        <div></div>
-                        <button class="nudge-btn" onclick="nudgeF('down')">▼</button>
-                        <div></div>
-                    </div>
-                </div>
-            </div>
-            <div>
-                <div class="workspace-container">
-                    <div class="workspace" id="ws-front"><!-- الحقول ديناميكية --></div>
-                </div>
-                <div class="action-btns">
-                    <button class="btn btn-green" onclick="saveImageOf('front')">💾 حفظ PNG</button>
-                    <button class="btn btn-red" onclick="saveAsPdf('front')">📄 حفظ PDF</button>
-                    <button class="btn btn-purple" onclick="openShareModal('front')">📤 مشاركة</button>
-                </div>
-            </div>
+<!-- FRONT EDITOR -->
+<div id="sc-front">
+  <div class="ed-bar">
+    <button onclick="showMenu()">← القائمة</button>
+    <button onclick="showForm()">✏️ البيانات</button>
+    <span class="sp"></span>
+    <button onclick="openShare('front')" style="background:rgba(0,120,255,.3)">📤 مشاركة</button>
+  </div>
+  <div class="zoom-bar">
+    <button onclick="adjZoom('front',-10)">−</button>
+    <input type="range" id="zoom-f" min="20" max="200" value="100" oninput="setZoom('front',this.value)">
+    <span class="zoom-label" id="zlbl-f">100%</span>
+    <button onclick="adjZoom('front',10)">+</button>
+    <div class="zsp"></div>
+    <button class="zoom-fit-btn" onclick="fitZoom('front')">⊡ ملاءمة</button>
+    <button class="zoom-fit-btn" onclick="setZoom('front',100)">100%</button>
+  </div>
+  <div class="ed-body">
+    <div class="ed-layout">
+      <!-- CONTROL PANEL FRONT -->
+      <div class="ctrl-panel" id="cp-f">
+        <h3>🎛️ أدوات التعديل الدقيقة</h3>
+        <div class="sel-ind" id="si-f">العنصر: <span id="sn-f">—</span></div>
+        <div class="pos-display" id="pd-f">X: — &nbsp;|&nbsp; Y: —</div>
+
+        <!-- الإحداثيات الرقمية -->
+        <div class="coord-row">
+          <div class="coord-box">
+            <label>X (يسار)</label>
+            <input type="text" id="cx-f" placeholder="0" oninput="setCoord('front','x',this.value)">
+          </div>
+          <div class="coord-box">
+            <label>Y (أعلى)</label>
+            <input type="text" id="cy-f" placeholder="0" oninput="setCoord('front','y',this.value)">
+          </div>
         </div>
+
+        <!-- حجم الخط -->
+        <div class="cg" style="margin-top:10px">
+          <label>📐 الحجم (px)</label>
+          <div class="cg-row">
+            <input type="range" id="fs-f" min="8" max="80" value="18" oninput="applyFs('front',this.value)">
+            <span class="cg-val" id="fsv-f">18</span>
+          </div>
+        </div>
+
+        <!-- الشفافية -->
+        <div class="cg">
+          <label>👁 الشفافية</label>
+          <div class="cg-row">
+            <input type="range" id="op-f" min="0" max="1" step="0.01" value="1" oninput="applyOp('front',this.value)">
+            <span class="cg-val" id="opv-f">1.00</span>
+          </div>
+        </div>
+
+        <!-- الغبشة -->
+        <div class="cg">
+          <label>🌫 الغبشة (px)</label>
+          <div class="cg-row">
+            <input type="range" id="bl-f" min="0" max="8" step="0.1" value="0" oninput="applyBlur('front',this.value)">
+            <span class="cg-val" id="blv-f">0.0</span>
+          </div>
+        </div>
+
+        <!-- لون النص -->
+        <div class="cg">
+          <label>🎨 لون النص</label>
+          <div class="cg-color">
+            <input type="color" id="col-f" value="#000000" oninput="applyColor('front',this.value)">
+            <span class="cg-val" id="colv-f">#000000</span>
+          </div>
+        </div>
+
+        <!-- حجم الخطوة -->
+        <div class="cg">
+          <label>🔢 خطوة التحريك (px)</label>
+          <div class="step-pills" id="steps-f">
+            <span class="step-pill active" data-v="1" onclick="setStep('front',1,this)">1</span>
+            <span class="step-pill" data-v="2" onclick="setStep('front',2,this)">2</span>
+            <span class="step-pill" data-v="5" onclick="setStep('front',5,this)">5</span>
+            <span class="step-pill" data-v="10" onclick="setStep('front',10,this)">10</span>
+            <span class="step-pill" data-v="20" onclick="setStep('front',20,this)">20</span>
+          </div>
+        </div>
+
+        <!-- لوحة التحريك -->
+        <div class="nudge-wrap">
+          <div class="nudge-grid">
+            <div></div>
+            <button class="nb" onclick="nudge('front','up')">▲</button>
+            <div></div>
+            <button class="nb" onclick="nudge('front','right')">▶</button>
+            <div class="nb-center">↔</div>
+            <button class="nb" onclick="nudge('front','left')">◀</button>
+            <div></div>
+            <button class="nb" onclick="nudge('front','down')">▼</button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKSPACE FRONT -->
+      <div>
+        <div class="ws-container" id="wc-f" style="height:min(65vh,500px)">
+          <div class="ws-viewport" id="wvp-f">
+            <div class="ws-inner" id="wi-f">
+              <div class="workspace" id="ws-front"></div>
+            </div>
+          </div>
+        </div>
+        <div class="act-btns">
+          <button class="btn btn-green" onclick="saveImg('front')">💾 PNG عالي الجودة</button>
+          <button class="btn btn-rd" onclick="savePdf('front')">📄 PDF بطاقة</button>
+          <button class="btn btn-pu" onclick="openShare('front')">📤 مشاركة</button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
-<!-- ===== شاشة البطاقة الخلفية ===== -->
-<div id="screen-back">
-    <div class="editor-top-bar">
-        <button onclick="showMenu()">← القائمة</button>
-        <button onclick="regenerateSerial()" style="background:rgba(204,0,0,0.3);">🔀 رقم جديد</button>
-        <span class="spacer"></span>
-        <button onclick="openShareModal('back')" style="background: rgba(0,123,255,0.3);">📤 مشاركة</button>
-    </div>
-    <div class="editor-body">
-        <div class="editor-layout">
-            <div class="control-panel">
-                <h3>🎛️ أدوات التعديل</h3>
-                <div id="selected-indicator-b" class="selected-indicator">
-                    العنصر: <span id="active-el-name-b">—</span>
-                </div>
-                <div class="control-group">
-                    <label>حجم الرقم:</label>
-                    <input type="range" id="fontSize-ctrl-b" min="10" max="50" value="22">
-                </div>
-                <div class="control-group">
-                    <label>الشفافية:</label>
-                    <input type="range" id="opacity-ctrl-b" min="0" max="1" step="0.05" value="1">
-                </div>
-                <div class="control-group" style="text-align:center">
-                    <label>تحريك دقيق:</label>
-                    <div class="nudge-container">
-                        <div></div>
-                        <button class="nudge-btn" onclick="nudgeB('up')">▲</button>
-                        <div></div>
-                        <button class="nudge-btn" onclick="nudgeB('right')">▶</button>
-                        <div style="font-size:10px;display:flex;align-items:center;justify-content:center;color:#94a3b8">↔</div>
-                        <button class="nudge-btn" onclick="nudgeB('left')">◀</button>
-                        <div></div>
-                        <button class="nudge-btn" onclick="nudgeB('down')">▼</button>
-                        <div></div>
-                    </div>
-                </div>
-                <div style="margin-top:12px;padding:10px;background:#fff5f5;border-radius:8px;font-size:11px;color:#b91c1c;text-align:center">
-                    🔴 الرقم الحالي:<br>
-                    <strong id="current-serial" style="font-size:15px;letter-spacing:2px">—</strong>
-                </div>
-            </div>
-            <div>
-                <div class="workspace-container">
-                    <div class="workspace" id="ws-back"><!-- الرقم ديناميكي --></div>
-                </div>
-                <div class="action-btns">
-                    <button class="btn btn-green" onclick="saveImageOf('back')">💾 حفظ PNG</button>
-                    <button class="btn btn-red" onclick="saveAsPdf('back')">📄 حفظ PDF</button>
-                    <button class="btn btn-purple" onclick="openShareModal('back')">📤 مشاركة</button>
-                </div>
-            </div>
+<!-- BACK EDITOR -->
+<div id="sc-back">
+  <div class="ed-bar">
+    <button onclick="showMenu()">← القائمة</button>
+    <button onclick="regenSerial()" style="background:rgba(200,0,0,.3)">🔀 رقم جديد</button>
+    <span class="sp"></span>
+    <button onclick="openShare('back')" style="background:rgba(0,120,255,.3)">📤 مشاركة</button>
+  </div>
+  <div class="zoom-bar">
+    <button onclick="adjZoom('back',-10)">−</button>
+    <input type="range" id="zoom-b" min="20" max="200" value="100" oninput="setZoom('back',this.value)">
+    <span class="zoom-label" id="zlbl-b">100%</span>
+    <button onclick="adjZoom('back',10)">+</button>
+    <div class="zsp"></div>
+    <button class="zoom-fit-btn" onclick="fitZoom('back')">⊡ ملاءمة</button>
+    <button class="zoom-fit-btn" onclick="setZoom('back',100)">100%</button>
+  </div>
+  <div class="ed-body">
+    <div class="ed-layout">
+      <!-- CONTROL PANEL BACK -->
+      <div class="ctrl-panel" id="cp-b">
+        <h3>🎛️ أدوات الرقم الأحمر</h3>
+        <div class="sel-ind" id="si-b" style="display:block;background:#fff5f5;color:#b91c1c">
+          الرقم: <span id="serial-disp" style="font-family:monospace;font-size:14px;letter-spacing:2px">—</span>
         </div>
+        <div class="pos-display" id="pd-b">X: — &nbsp;|&nbsp; Y: —</div>
+
+        <div class="coord-row">
+          <div class="coord-box">
+            <label>X (يسار)</label>
+            <input type="text" id="cx-b" placeholder="0" oninput="setCoord('back','x',this.value)">
+          </div>
+          <div class="coord-box">
+            <label>Y (أعلى)</label>
+            <input type="text" id="cy-b" placeholder="0" oninput="setCoord('back','y',this.value)">
+          </div>
+        </div>
+
+        <div class="cg" style="margin-top:10px">
+          <label>📐 الحجم (px)</label>
+          <div class="cg-row">
+            <input type="range" id="fs-b" min="10" max="60" value="22" oninput="applyFs('back',this.value)">
+            <span class="cg-val" id="fsv-b">22</span>
+          </div>
+        </div>
+
+        <div class="cg">
+          <label>🔄 الدوران (°)</label>
+          <div class="cg-row">
+            <input type="range" id="rot-b" min="-180" max="180" value="-90" oninput="applyRot('back',this.value)">
+            <span class="cg-val" id="rotv-b">-90°</span>
+          </div>
+        </div>
+
+        <div class="cg">
+          <label>👁 الشفافية</label>
+          <div class="cg-row">
+            <input type="range" id="op-b" min="0" max="1" step="0.01" value="1" oninput="applyOp('back',this.value)">
+            <span class="cg-val" id="opv-b">1.00</span>
+          </div>
+        </div>
+
+        <div class="cg">
+          <label>🎨 لون الرقم</label>
+          <div class="cg-color">
+            <input type="color" id="col-b" value="#cc0000" oninput="applyColor('back',this.value)">
+            <span class="cg-val" id="colv-b">#cc0000</span>
+          </div>
+        </div>
+
+        <div class="cg">
+          <label>🔡 تباعد الأرقام (px)</label>
+          <div class="cg-row">
+            <input type="range" id="ls-b" min="0" max="15" step="0.5" value="3" oninput="applyLS('back',this.value)">
+            <span class="cg-val" id="lsv-b">3</span>
+          </div>
+        </div>
+
+        <div class="cg">
+          <label>🔢 خطوة التحريك (px)</label>
+          <div class="step-pills" id="steps-b">
+            <span class="step-pill active" data-v="1" onclick="setStep('back',1,this)">1</span>
+            <span class="step-pill" data-v="2" onclick="setStep('back',2,this)">2</span>
+            <span class="step-pill" data-v="5" onclick="setStep('back',5,this)">5</span>
+            <span class="step-pill" data-v="10" onclick="setStep('back',10,this)">10</span>
+            <span class="step-pill" data-v="20" onclick="setStep('back',20,this)">20</span>
+          </div>
+        </div>
+
+        <div class="nudge-wrap">
+          <div class="nudge-grid">
+            <div></div>
+            <button class="nb" onclick="nudge('back','up')">▲</button>
+            <div></div>
+            <button class="nb" onclick="nudge('back','right')">▶</button>
+            <div class="nb-center">↔</div>
+            <button class="nb" onclick="nudge('back','left')">◀</button>
+            <div></div>
+            <button class="nb" onclick="nudge('back','down')">▼</button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKSPACE BACK -->
+      <div>
+        <div class="ws-container" id="wc-b" style="height:min(65vh,500px)">
+          <div class="ws-viewport" id="wvp-b">
+            <div class="ws-inner" id="wi-b">
+              <div class="workspace" id="ws-back"></div>
+            </div>
+          </div>
+        </div>
+        <div class="act-btns">
+          <button class="btn btn-green" onclick="saveImg('back')">💾 PNG عالي الجودة</button>
+          <button class="btn btn-rd" onclick="savePdf('back')">📄 PDF بطاقة</button>
+          <button class="btn btn-pu" onclick="openShare('back')">📤 مشاركة</button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
-<!-- ===== نافذة المشاركة ===== -->
-<div class="modal-overlay" id="share-modal">
-    <div class="modal-box">
-        <h3>📤 مشاركة / تصدير البطاقة</h3>
-        <img id="share-preview" class="modal-preview" src="" alt="معاينة">
-        <div class="modal-actions">
-            <button class="modal-btn modal-btn-img" onclick="doShareDownloadImg()">⬇️ تحميل كصورة PNG</button>
-            <button class="modal-btn modal-btn-pdf" onclick="doShareDownloadPdf()">📄 تحميل كملف PDF</button>
-            <button class="modal-btn modal-btn-share" onclick="doNativeShare()">📲 مشاركة عبر الجهاز</button>
-            <button class="modal-btn modal-btn-close" onclick="closeShareModal()">إغلاق</button>
-        </div>
+<!-- SHARE MODAL -->
+<div class="overlay" id="share-modal">
+  <div class="modal">
+    <h3>📤 مشاركة / تصدير</h3>
+    <img id="mprev" class="mprev" src="" alt="">
+    <div class="macts">
+      <button class="mbtn mb-img" onclick="doDlImg()">⬇️ تحميل PNG</button>
+      <button class="mbtn mb-pdf" onclick="doDlPdf()">📄 تحميل PDF</button>
+      <button class="mbtn mb-sh"  onclick="doNativeShare()">📲 مشاركة عبر الجهاز</button>
+      <button class="mbtn mb-cl"  onclick="closeShare()">إغلاق</button>
     </div>
+  </div>
 </div>
 
 <script>
-// ============================================================
-//  الساعة الرقمية – Samsung Watch
-// ============================================================
-(function buildTicks() {
-    const container = document.getElementById('tick-marks');
-    for (let i = 0; i < 60; i++) {
-        const t = document.createElement('div');
-        t.className = 'tick-mark';
-        const isHour = i % 5 === 0;
-        t.style.height = isHour ? '10px' : '5px';
-        t.style.opacity = isHour ? '0.6' : '0.3';
-        const angle = (i / 60) * 360;
-        t.style.transform = `rotate(${angle}deg) translateX(-50%)`;
-        t.style.top = '0';
-        container.appendChild(t);
-    }
+/* ═══════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('ticks');
+  for(let i=0;i<60;i++){
+    const t=document.createElement('div');
+    t.className='tick';
+    const isH=i%5===0;
+    t.style.cssText=`width:${isH?2:1.5}px;height:${isH?10:5}px;background:${isH?'#3a3a3a':'#2a2a2a'};`;
+    t.style.transform=`rotate(${(i/60)*360}deg) translateX(-50%)`;
+    t.style.top='0';
+    c.appendChild(t);
+  }
 })();
 
-let clockInterval;
-function startClock() {
-    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    function tick() {
-        const now = new Date();
-        const h = String(now.getHours()).padStart(2,'0');
-        const m = String(now.getMinutes()).padStart(2,'0');
-        document.getElementById('clock-h').textContent = h;
-        document.getElementById('clock-m').textContent = m;
-        document.getElementById('clock-date').textContent =
-            String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0');
-        document.getElementById('clock-day').textContent = days[now.getDay()];
-
-        // التحقق من الوقت: 3:18 → أي ساعة
-        if (now.getHours() === 3 && now.getMinutes() === 18) {
-            onTimeMatch();
-        }
-    }
-    tick();
-    clockInterval = setInterval(tick, 1000);
+let ckInt;
+function startClock(){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function tick(){
+    const n=new Date();
+    const h=String(n.getHours()).padStart(2,'0');
+    const m=String(n.getMinutes()).padStart(2,'0');
+    document.getElementById('ck-h').textContent=h;
+    document.getElementById('ck-m').textContent=m;
+    document.getElementById('ck-date').textContent=
+      String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0');
+    document.getElementById('ck-day').textContent=days[n.getDay()];
+    if(n.getHours()===3&&n.getMinutes()===18) onMatch();
+  }
+  tick(); ckInt=setInterval(tick,1000);
 }
-
-function onTimeMatch() {
-    clearInterval(clockInterval);
-    document.getElementById('screen-clock').style.opacity = '0';
-    document.getElementById('screen-clock').style.transition = 'opacity 0.5s';
-    setTimeout(() => {
-        document.getElementById('screen-clock').style.display = 'none';
-        document.getElementById('screen-menu').style.display = 'flex';
-    }, 500);
+function onMatch(){
+  clearInterval(ckInt);
+  const el=document.getElementById('sc-clock');
+  el.style.transition='opacity .5s'; el.style.opacity='0';
+  setTimeout(()=>{ el.style.display='none'; document.getElementById('sc-menu').style.display='flex'; },500);
 }
-
-// للاختبار: الضغط على الساعة يفتح القائمة مباشرة
-document.querySelector('.watch-face').addEventListener('click', onTimeMatch);
-document.querySelector('.watch-face').addEventListener('touchend', function(e) {
-    e.preventDefault(); onTimeMatch();
-}, { passive: false });
-
+document.querySelector('.w-face').addEventListener('click',onMatch);
+document.querySelector('.w-face').addEventListener('touchend',e=>{e.preventDefault();onMatch();},{passive:false});
 startClock();
 
-// ============================================================
-//  التنقل بين الشاشات
-// ============================================================
-function hideAll() {
-    ['screen-clock','screen-menu','screen-form','screen-front','screen-back'].forEach(id => {
-        const el = document.getElementById(id);
-        el.style.display = 'none';
-    });
-}
-function showMenu() {
-    hideAll();
-    document.getElementById('screen-menu').style.display = 'flex';
-}
-function showForm() {
-    hideAll();
-    document.getElementById('screen-form').style.display = 'flex';
-    loadFormData();
-}
-function goToFront() {
-    saveAllData();
-    hideAll();
-    document.getElementById('screen-front').style.display = 'flex';
-    buildFrontCard();
-    adjustScale('ws-front', 1000, 673);
-}
-function showBack() {
-    hideAll();
-    document.getElementById('screen-back').style.display = 'flex';
-    buildBackCard();
-    adjustScale('ws-back', 1000, 673);
-}
+/* ═══════════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════════ */
+function hide(){['sc-clock','sc-menu','sc-form','sc-front','sc-back'].forEach(id=>{
+  document.getElementById(id).style.display='none';
+})}
+function showMenu(){ hide(); document.getElementById('sc-menu').style.display='flex'; }
+function showForm(){ hide(); document.getElementById('sc-form').style.display='flex'; loadForm(); }
+function goFront(){ saveData(); hide(); document.getElementById('sc-front').style.display='flex'; buildFront(); fitZoom('front'); }
+function showBack(){ hide(); document.getElementById('sc-back').style.display='flex'; buildBack(); fitZoom('back'); }
 
-// ============================================================
-//  الحفظ التلقائي
-// ============================================================
-let autoSaveTimer;
-function scheduleAutoSave() {
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => {
-        saveAllData();
-        const notice = document.getElementById('save-status');
-        const now = new Date();
-        notice.textContent = `✅ حُفظ تلقائياً: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-        notice.classList.add('saved');
-        setTimeout(() => notice.classList.remove('saved'), 2000);
-    }, 600);
+/* ═══════════════════════════════════════════════
+   AUTOSAVE
+═══════════════════════════════════════════════ */
+let ast;
+function sched(){ clearTimeout(ast); ast=setTimeout(()=>{ saveData(); flashSave(); },700); }
+function saveData(){
+  try{
+    const d=collectData();
+    localStorage.setItem('pal_id',JSON.stringify(d));
+    if(photoUrl) localStorage.setItem('pal_photo',photoUrl);
+  }catch(e){}
 }
-
-function collectData() {
-    return {
-        idNumber: document.getElementById('id-number').value,
-        firstNameAr: document.getElementById('first-name-ar').value,
-        firstNameHe: document.getElementById('first-name-he').value,
-        fatherNameAr: document.getElementById('father-name-ar').value,
-        fatherNameHe: document.getElementById('father-name-he').value,
-        grandNameAr: document.getElementById('grand-name-ar').value,
-        grandNameHe: document.getElementById('grand-name-he').value,
-        familyNameAr: document.getElementById('family-name-ar').value,
-        familyNameHe: document.getElementById('family-name-he').value,
-        motherNameAr: document.getElementById('mother-name-ar').value,
-        motherNameHe: document.getElementById('mother-name-he').value,
-        dobAr: document.getElementById('dob-ar').value,
-        dobHe: document.getElementById('dob-he').value,
-        pobAr: document.getElementById('pob-ar').value,
-        pobHe: document.getElementById('pob-he').value,
-        genderAr: document.getElementById('gender-ar').value,
-        genderHe: document.getElementById('gender-he').value,
-        religionAr: document.getElementById('religion-ar').value,
-        religionHe: document.getElementById('religion-he').value,
-        issuePlaceAr: document.getElementById('issue-place-ar').value,
-        issuePlaceHe: document.getElementById('issue-place-he').value,
-        issueDateAr: document.getElementById('issue-date-ar').value,
-        issueDateHe: document.getElementById('issue-date-he').value
-    };
+function flashSave(){
+  const el=document.getElementById('ss');
+  const n=new Date();
+  el.textContent=`✅ حُفظ: ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+  el.classList.add('ok'); setTimeout(()=>el.classList.remove('ok'),2000);
 }
-
-function saveAllData() {
-    try {
-        localStorage.setItem('pal_id_data', JSON.stringify(collectData()));
-        if (photoDataUrl) localStorage.setItem('id_photo', photoDataUrl);
-    } catch(e) {}
+function collectData(){
+  return{
+    idNum:v('id-num'),fnAr:v('fn-ar'),fnHe:v('fn-he'),
+    dadAr:v('dad-ar'),dadHe:v('dad-he'),gdAr:v('gd-ar'),gdHe:v('gd-he'),
+    famAr:v('fam-ar'),famHe:v('fam-he'),momAr:v('mom-ar'),momHe:v('mom-he'),
+    dobAr:v('dob-ar'),dobHe:v('dob-he'),pobAr:v('pob-ar'),pobHe:v('pob-he'),
+    genAr:v('gen-ar'),genHe:v('gen-he'),relAr:v('rel-ar'),relHe:v('rel-he'),
+    ipAr:v('ip-ar'),ipHe:v('ip-he'),idAr:v('id-ar'),idHe:v('id-he')
+  };
 }
-
-function loadFormData() {
-    try {
-        const raw = localStorage.getItem('pal_id_data');
-        if (!raw) return;
-        const d = JSON.parse(raw);
-        const map = {
-            'id-number': 'idNumber', 'first-name-ar': 'firstNameAr', 'first-name-he': 'firstNameHe',
-            'father-name-ar': 'fatherNameAr', 'father-name-he': 'fatherNameHe',
-            'grand-name-ar': 'grandNameAr', 'grand-name-he': 'grandNameHe',
-            'family-name-ar': 'familyNameAr', 'family-name-he': 'familyNameHe',
-            'mother-name-ar': 'motherNameAr', 'mother-name-he': 'motherNameHe',
-            'dob-ar': 'dobAr', 'dob-he': 'dobHe', 'pob-ar': 'pobAr', 'pob-he': 'pobHe',
-            'gender-ar': 'genderAr', 'gender-he': 'genderHe',
-            'religion-ar': 'religionAr', 'religion-he': 'religionHe',
-            'issue-place-ar': 'issuePlaceAr', 'issue-place-he': 'issuePlaceHe',
-            'issue-date-ar': 'issueDateAr', 'issue-date-he': 'issueDateHe'
-        };
-        for (const [id, key] of Object.entries(map)) {
-            const el = document.getElementById(id);
-            if (el && d[key] !== undefined) el.value = d[key];
-        }
-        const photo = localStorage.getItem('id_photo');
-        if (photo) {
-            photoDataUrl = photo;
-            const prev = document.getElementById('photo-preview');
-            prev.src = photo; prev.style.display = 'block';
-            document.getElementById('upload-text').style.display = 'none';
-        }
-    } catch(e) {}
-}
-
-// ربط الحفظ التلقائي بكل الحقول
-document.querySelectorAll('#screen-form input[type="text"]').forEach(inp => {
-    inp.addEventListener('input', scheduleAutoSave);
-});
-
-// معالجة الصورة
-let photoDataUrl = localStorage.getItem('id_photo') || '';
-document.getElementById('photo-input').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        photoDataUrl = ev.target.result;
-        const prev = document.getElementById('photo-preview');
-        prev.src = photoDataUrl; prev.style.display = 'block';
-        document.getElementById('upload-text').style.display = 'none';
-        scheduleAutoSave();
-    };
-    reader.readAsDataURL(file);
-});
-
-// ============================================================
-//  بناء البطاقة الأمامية
-// ============================================================
-let activeFront = null;
-function buildFrontCard() {
-    const ws = document.getElementById('ws-front');
-    ws.innerHTML = '';
-    activeFront = null;
-
-    let raw;
-    try { raw = localStorage.getItem('pal_id_data'); } catch(e) {}
-    if (!raw) { raw = JSON.stringify(collectData()); }
-    const data = JSON.parse(raw);
-
-    // الصورة الشخصية
-    const photo = photoDataUrl || localStorage.getItem('id_photo');
-    if (photo) {
-        const img = document.createElement('img');
-        img.src = photo; img.id = 'front-img';
-        img.className = 'draggable'; img.style.display = 'block';
-        img.style.left = '60px'; img.style.top = '90px';
-        ws.appendChild(img);
-        makeDraggableF(img, 'الصورة الشخصية');
+function v(id){ const e=document.getElementById(id); return e?e.value:''; }
+function loadForm(){
+  try{
+    const raw=localStorage.getItem('pal_id'); if(!raw)return;
+    const d=JSON.parse(raw);
+    const mp={'id-num':'idNum','fn-ar':'fnAr','fn-he':'fnHe','dad-ar':'dadAr','dad-he':'dadHe',
+      'gd-ar':'gdAr','gd-he':'gdHe','fam-ar':'famAr','fam-he':'famHe','mom-ar':'momAr','mom-he':'momHe',
+      'dob-ar':'dobAr','dob-he':'dobHe','pob-ar':'pobAr','pob-he':'pobHe','gen-ar':'genAr','gen-he':'genHe',
+      'rel-ar':'relAr','rel-he':'relHe','ip-ar':'ipAr','ip-he':'ipHe','id-ar':'idAr','id-he':'idHe'};
+    for(const[id,key]of Object.entries(mp)){
+      const el=document.getElementById(id);if(el&&d[key]!==undefined)el.value=d[key];
     }
-
-    // الختم
-    const stamp = document.createElement('img');
-    stamp.src = 'https://i.imgur.com/27BB2UJ.png';
-    stamp.className = 'draggable';
-    stamp.style.cssText = 'position:absolute;left:690px;top:430px;width:180px;opacity:1;filter:none;';
-    ws.appendChild(stamp);
-    makeDraggableF(stamp, 'الختم');
-
-    // الحقول
-    const fields = [
-        { text: data.idNumber, top: '235px', left: '600px', lang: 'ar', name: 'رقم الهوية' },
-        { text: data.firstNameAr, top: '280px', left: '600px', lang: 'ar', name: 'الاسم (عربي)' },
-        { text: data.firstNameHe, top: '298px', left: '600px', lang: 'he', name: 'الاسم (عبري)' },
-        { text: data.fatherNameAr, top: '340px', left: '600px', lang: 'ar', name: 'اسم الأب (عربي)' },
-        { text: data.fatherNameHe, top: '358px', left: '600px', lang: 'he', name: 'اسم الأب (عبري)' },
-        { text: data.grandNameAr, top: '400px', left: '600px', lang: 'ar', name: 'اسم الجد (عربي)' },
-        { text: data.grandNameHe, top: '418px', left: '600px', lang: 'he', name: 'اسم الجد (عبري)' },
-        { text: data.familyNameAr, top: '460px', left: '600px', lang: 'ar', name: 'العائلة (عربي)' },
-        { text: data.familyNameHe, top: '478px', left: '600px', lang: 'he', name: 'العائلة (عبري)' },
-        { text: data.motherNameAr, top: '520px', left: '600px', lang: 'ar', name: 'اسم الأم (عربي)' },
-        { text: data.motherNameHe, top: '538px', left: '600px', lang: 'he', name: 'اسم الأم (عبري)' },
-        { text: data.dobAr, top: '580px', left: '600px', lang: 'ar', name: 'تاريخ الميلاد (عربي)' },
-        { text: data.dobHe, top: '598px', left: '600px', lang: 'he', name: 'تاريخ الميلاد (عبري)' },
-        { text: data.pobAr, top: '490px', left: '330px', lang: 'ar', name: 'مكان الولادة (عربي)' },
-        { text: data.pobHe, top: '510px', left: '330px', lang: 'he', name: 'مكان الولادة (عبري)' },
-        { text: data.genderAr, top: '550px', left: '460px', lang: 'ar', name: 'الجنس (عربي)' },
-        { text: data.genderHe, top: '570px', left: '460px', lang: 'he', name: 'الجنس (عبري)' },
-        { text: data.religionAr, top: '550px', left: '330px', lang: 'ar', name: 'الديانة (عربي)' },
-        { text: data.religionHe, top: '570px', left: '330px', lang: 'he', name: 'الديانة (عبري)' },
-        { text: data.issuePlaceAr, top: '610px', left: '330px', lang: 'ar', name: 'مكان الإصدار (عربي)' },
-        { text: data.issuePlaceHe, top: '630px', left: '330px', lang: 'he', name: 'مكان الإصدار (عبري)' },
-        { text: data.issueDateAr, top: '610px', left: '460px', lang: 'ar', name: 'تاريخ الإصدار (عربي)' },
-        { text: data.issueDateHe, top: '630px', left: '460px', lang: 'he', name: 'تاريخ الإصدار (عبري)' }
-    ];
-
-    fields.forEach(f => {
-        const div = document.createElement('div');
-        div.className = `draggable ${f.lang === 'he' ? 'he-element' : 'ar-element'}`;
-        div.innerText = f.text;
-        div.style.top = f.top; div.style.left = f.left;
-        div.style.fontSize = f.lang === 'he' ? '15px' : '17px';
-        ws.appendChild(div);
-        makeDraggableF(div, f.name);
-    });
+    const ph=localStorage.getItem('pal_photo');
+    if(ph){ photoUrl=ph; const p=document.getElementById('pp'); p.src=ph; p.style.display='block';
+      document.getElementById('ptxt').style.display='none'; }
+  }catch(e){}
 }
+document.querySelectorAll('#sc-form input[type=text]').forEach(i=>i.addEventListener('input',sched));
 
-function makeDraggableF(el, name) {
-    let p1=0,p2=0,p3=0,p4=0;
-    const selectEl = () => {
-        if (activeFront) activeFront.classList.remove('selected');
-        activeFront = el; activeFront.classList.add('selected');
-        document.getElementById('selected-indicator-f').style.display = 'block';
-        document.getElementById('active-el-name-f').innerText = name;
-        updateControlsF();
-    };
-    el.addEventListener('mousedown', e => {
-        e.preventDefault(); selectEl();
-        p3 = e.clientX; p4 = e.clientY;
-        const move = e2 => { e2.preventDefault();
-            el.style.top  = (el.offsetTop  - (p4 - (p4 = e2.clientY))) + 'px';
-            el.style.left = (el.offsetLeft - (p3 - (p3 = e2.clientX))) + 'px';
-        };
-        const up = () => { document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
-        document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
-    });
-    el.addEventListener('touchstart', e => {
-        e.preventDefault(); selectEl();
-        let t = e.touches[0]; p3 = t.clientX; p4 = t.clientY;
-        const move = e2 => { e2.preventDefault(); let t2 = e2.touches[0];
-            el.style.top  = (el.offsetTop  - (p4 - (p4 = t2.clientY))) + 'px';
-            el.style.left = (el.offsetLeft - (p3 - (p3 = t2.clientX))) + 'px';
-        };
-        const end = () => { document.removeEventListener('touchmove',move); document.removeEventListener('touchend',end); };
-        document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',end,{passive:false});
-    }, {passive:false});
-}
-
-function updateControlsF() {
-    if (!activeFront) return;
-    const s = window.getComputedStyle(activeFront);
-    document.getElementById('fontSize-ctrl-f').value =
-        activeFront.tagName === 'IMG' ? parseInt(activeFront.style.width)/8 : parseFloat(s.fontSize);
-    document.getElementById('opacity-ctrl-f').value = s.opacity;
-    const m = (s.filter||'').match(/blur\((.+?)\)/);
-    document.getElementById('blur-ctrl-f').value = m ? parseFloat(m[1]) : 0;
-}
-document.getElementById('fontSize-ctrl-f').addEventListener('input', function() {
-    if (!activeFront) return;
-    activeFront.tagName === 'IMG' ? (activeFront.style.width = this.value*8+'px') : (activeFront.style.fontSize = this.value+'px');
+let photoUrl=localStorage.getItem('pal_photo')||'';
+document.getElementById('pi').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=ev=>{
+    photoUrl=ev.target.result;
+    const p=document.getElementById('pp'); p.src=photoUrl; p.style.display='block';
+    document.getElementById('ptxt').style.display='none'; sched();
+  }; r.readAsDataURL(f);
 });
-document.getElementById('opacity-ctrl-f').addEventListener('input', function() { if (activeFront) activeFront.style.opacity = this.value; });
-document.getElementById('blur-ctrl-f').addEventListener('input', function() { if (activeFront) activeFront.style.filter = this.value>0?`blur(${this.value}px)`:'none'; });
-function nudgeF(d) {
-    if (!activeFront) return;
-    if (d==='up')    activeFront.style.top  = (activeFront.offsetTop -1)+'px';
-    if (d==='down')  activeFront.style.top  = (activeFront.offsetTop +1)+'px';
-    if (d==='left')  activeFront.style.left = (activeFront.offsetLeft-1)+'px';
-    if (d==='right') activeFront.style.left = (activeFront.offsetLeft+1)+'px';
+
+/* ═══════════════════════════════════════════════
+   ZOOM SYSTEM
+═══════════════════════════════════════════════ */
+const zoomState={ front:100, back:100 };
+const stepState={ front:1, back:1 };
+
+function setZoom(sc,val){
+  val=Math.min(200,Math.max(20,parseInt(val)));
+  zoomState[sc]=val;
+  const wi=document.getElementById('wi-'+sc[0]);
+  wi.style.transform=`scale(${val/100})`;
+  wi.style.transformOrigin='top right';
+  // adjust inner container height
+  const ws=document.getElementById('ws-'+(sc==='front'?'front':'back'));
+  wi.style.minWidth=(ws.offsetWidth*(val/100))+'px';
+  wi.style.minHeight=(ws.offsetHeight*(val/100))+'px';
+  document.getElementById('zoom-'+sc[0]).value=val;
+  document.getElementById('zlbl-'+sc[0]).textContent=val+'%';
 }
-
-// ============================================================
-//  بناء البطاقة الخلفية
-// ============================================================
-let activeBack = null;
-let currentSerial = '';
-
-function generateSerial() {
-    let s = '';
-    for (let i = 0; i < 7; i++) s += Math.floor(Math.random() * 10);
-    return s;
+function adjZoom(sc,delta){ setZoom(sc,zoomState[sc]+delta); }
+function fitZoom(sc){
+  const wc=document.getElementById('wc-'+sc[0]);
+  const ws=document.getElementById('ws-'+(sc==='front'?'front':'back'));
+  const cw=wc.clientWidth-30;
+  const ch=wc.clientHeight-30;
+  const scaleW=cw/ws.offsetWidth;
+  const scaleH=ch/ws.offsetHeight;
+  const scale=Math.min(scaleW,scaleH,1)*100;
+  setZoom(sc,Math.floor(scale));
 }
-
-function buildBackCard() {
-    const ws = document.getElementById('ws-back');
-    ws.innerHTML = '';
-    activeBack = null;
-    currentSerial = generateSerial();
-    document.getElementById('current-serial').textContent = currentSerial;
-    placeSerialOnBack();
-}
-
-function placeSerialOnBack() {
-    const ws = document.getElementById('ws-back');
-    // إزالة الرقم القديم إن وجد
-    const old = ws.querySelector('.back-serial');
-    if (old) old.remove();
-
-    const el = document.createElement('div');
-    el.className = 'back-red-number back-serial draggable';
-    el.textContent = currentSerial;
-    // الموقع كما في الصورة المرجعية – يمكن تعديله بالسحب
-    el.style.cssText = `
-        position:absolute;
-        top: 390px;
-        left: 740px;
-        font-size: 22px;
-        color: #cc0000;
-        font-weight: 900;
-        font-family: 'Arial', monospace;
-        letter-spacing: 3px;
-        cursor: move;
-        user-select: none;
-        border: 1px dashed transparent;
-        transform: rotate(-90deg);
-        transform-origin: center center;
-    `;
-    ws.appendChild(el);
-    makeDraggableB(el, 'الرقم الأحمر');
-}
-
-function regenerateSerial() {
-    currentSerial = generateSerial();
-    document.getElementById('current-serial').textContent = currentSerial;
-    const el = document.querySelector('#ws-back .back-serial');
-    if (el) el.textContent = currentSerial;
-}
-
-function makeDraggableB(el, name) {
-    let p3=0,p4=0;
-    const selectEl = () => {
-        if (activeBack) activeBack.classList.remove('selected');
-        activeBack = el; activeBack.classList.add('selected');
-        document.getElementById('selected-indicator-b').style.display = 'block';
-        document.getElementById('active-el-name-b').innerText = name;
-        const s = window.getComputedStyle(el);
-        document.getElementById('fontSize-ctrl-b').value = parseFloat(s.fontSize);
-        document.getElementById('opacity-ctrl-b').value = s.opacity;
-    };
-    el.addEventListener('mousedown', e => {
-        e.preventDefault(); selectEl();
-        p3 = e.clientX; p4 = e.clientY;
-        const move = e2 => {
-            el.style.top  = (el.offsetTop  - (p4 - (p4 = e2.clientY))) + 'px';
-            el.style.left = (el.offsetLeft - (p3 - (p3 = e2.clientX))) + 'px';
-        };
-        const up = () => { document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
-        document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
-    });
-    el.addEventListener('touchstart', e => {
-        e.preventDefault(); selectEl();
-        let t = e.touches[0]; p3 = t.clientX; p4 = t.clientY;
-        const move = e2 => { e2.preventDefault(); let t2 = e2.touches[0];
-            el.style.top  = (el.offsetTop  - (p4 - (p4 = t2.clientY))) + 'px';
-            el.style.left = (el.offsetLeft - (p3 - (p3 = t2.clientX))) + 'px';
-        };
-        const end = () => { document.removeEventListener('touchmove',move); document.removeEventListener('touchend',end); };
-        document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',end,{passive:false});
-    }, {passive:false});
-}
-
-document.getElementById('fontSize-ctrl-b').addEventListener('input', function() {
-    if (activeBack) activeBack.style.fontSize = this.value + 'px';
+window.addEventListener('resize',()=>{
+  if(document.getElementById('sc-front').style.display!=='none') fitZoom('front');
+  if(document.getElementById('sc-back').style.display!=='none')  fitZoom('back');
 });
-document.getElementById('opacity-ctrl-b').addEventListener('input', function() {
-    if (activeBack) activeBack.style.opacity = this.value;
-});
-function nudgeB(d) {
-    if (!activeBack) return;
-    if (d==='up')    activeBack.style.top  = (activeBack.offsetTop -1)+'px';
-    if (d==='down')  activeBack.style.top  = (activeBack.offsetTop +1)+'px';
-    if (d==='left')  activeBack.style.left = (activeBack.offsetLeft-1)+'px';
-    if (d==='right') activeBack.style.left = (activeBack.offsetLeft+1)+'px';
+
+/* ═══════════════════════════════════════════════
+   FRONT CARD
+═══════════════════════════════════════════════ */
+let activeF=null;
+
+function buildFront(){
+  const ws=document.getElementById('ws-front');
+  ws.innerHTML=''; activeF=null;
+  let raw; try{raw=localStorage.getItem('pal_id');}catch(e){}
+  if(!raw) raw=JSON.stringify(collectData());
+  const d=JSON.parse(raw);
+
+  const ph=photoUrl||localStorage.getItem('pal_photo');
+  if(ph){
+    const img=document.createElement('img');
+    img.src=ph; img.id='front-img'; img.className='draggable';
+    img.style.cssText='display:block;position:absolute;left:60px;top:90px;width:172px;height:226px;object-fit:cover;border:1px solid #1e293b;';
+    ws.appendChild(img); makeDrag(img,'الصورة الشخصية','front');
+  }
+  const stamp=document.createElement('img');
+  stamp.src='https://i.imgur.com/27BB2UJ.png'; stamp.className='draggable';
+  stamp.style.cssText='position:absolute;left:690px;top:430px;width:180px;';
+  ws.appendChild(stamp); makeDrag(stamp,'الختم','front');
+
+  const fields=[
+    {text:d.idNum,  top:'235px',left:'600px',lang:'ar',name:'رقم الهوية'},
+    {text:d.fnAr,   top:'280px',left:'600px',lang:'ar',name:'الاسم (عربي)'},
+    {text:d.fnHe,   top:'298px',left:'600px',lang:'he',name:'الاسم (عبري)'},
+    {text:d.dadAr,  top:'340px',left:'600px',lang:'ar',name:'الأب (عربي)'},
+    {text:d.dadHe,  top:'358px',left:'600px',lang:'he',name:'الأب (عبري)'},
+    {text:d.gdAr,   top:'400px',left:'600px',lang:'ar',name:'الجد (عربي)'},
+    {text:d.gdHe,   top:'418px',left:'600px',lang:'he',name:'الجد (عبري)'},
+    {text:d.famAr,  top:'460px',left:'600px',lang:'ar',name:'العائلة (عربي)'},
+    {text:d.famHe,  top:'478px',left:'600px',lang:'he',name:'العائلة (عبري)'},
+    {text:d.momAr,  top:'520px',left:'600px',lang:'ar',name:'الأم (عربي)'},
+    {text:d.momHe,  top:'538px',left:'600px',lang:'he',name:'الأم (عبري)'},
+    {text:d.dobAr,  top:'580px',left:'600px',lang:'ar',name:'الميلاد (عربي)'},
+    {text:d.dobHe,  top:'598px',left:'600px',lang:'he',name:'الميلاد (عبري)'},
+    {text:d.pobAr,  top:'490px',left:'330px',lang:'ar',name:'مكان الولادة (عربي)'},
+    {text:d.pobHe,  top:'510px',left:'330px',lang:'he',name:'مكان الولادة (عبري)'},
+    {text:d.genAr,  top:'550px',left:'460px',lang:'ar',name:'الجنس (عربي)'},
+    {text:d.genHe,  top:'570px',left:'460px',lang:'he',name:'الجنس (عبري)'},
+    {text:d.relAr,  top:'550px',left:'330px',lang:'ar',name:'الديانة (عربي)'},
+    {text:d.relHe,  top:'570px',left:'330px',lang:'he',name:'الديانة (عبري)'},
+    {text:d.ipAr,   top:'610px',left:'330px',lang:'ar',name:'الإصدار-م (عربي)'},
+    {text:d.ipHe,   top:'630px',left:'330px',lang:'he',name:'الإصدار-م (عبري)'},
+    {text:d.idAr,   top:'610px',left:'460px',lang:'ar',name:'الإصدار-ت (عربي)'},
+    {text:d.idHe,   top:'630px',left:'460px',lang:'he',name:'الإصدار-ت (عبري)'},
+  ];
+  fields.forEach(f=>{
+    const div=document.createElement('div');
+    div.className=`draggable ${f.lang==='he'?'he-el':'ar-el'}`;
+    div.innerText=f.text; div.style.top=f.top; div.style.left=f.left;
+    div.style.fontSize=f.lang==='he'?'15px':'17px';
+    ws.appendChild(div); makeDrag(div,f.name,'front');
+  });
 }
 
-// ============================================================
-//  ضبط حجم مساحة العمل تلقائياً
-// ============================================================
-function adjustScale(wsId, baseW, baseH) {
-    const ws = document.getElementById(wsId);
-    if (!ws) return;
-    const container = ws.parentElement;
-    const cw = container.clientWidth - 24;
-    if (cw < baseW) {
-        const scale = cw / baseW;
-        ws.style.transform = `scale(${scale})`;
-        ws.style.transformOrigin = 'top right';
-        container.style.height = (baseH * scale + 24) + 'px';
+/* ═══════════════════════════════════════════════
+   BACK CARD
+═══════════════════════════════════════════════ */
+let activeB=null, curSerial='';
+function rnd7(){ let s=''; for(let i=0;i<7;i++) s+=Math.floor(Math.random()*10); return s; }
+function buildBack(){
+  const ws=document.getElementById('ws-back'); ws.innerHTML=''; activeB=null;
+  curSerial=rnd7();
+  document.getElementById('serial-disp').textContent=curSerial;
+  placeSerial();
+}
+function placeSerial(){
+  const ws=document.getElementById('ws-back');
+  const old=ws.querySelector('.back-serial'); if(old) old.remove();
+  const el=document.createElement('div');
+  el.className='back-serial'; el.textContent=curSerial;
+  const rotVal=parseInt(document.getElementById('rot-b').value)||(-90);
+  const fsVal=parseInt(document.getElementById('fs-b').value)||22;
+  const lsVal=parseFloat(document.getElementById('ls-b').value)||3;
+  const colVal=document.getElementById('col-b').value||'#cc0000';
+  el.style.cssText=`
+    position:absolute;top:380px;left:745px;
+    font-size:${fsVal}px;color:${colVal};font-weight:900;
+    font-family:'Arial',monospace;letter-spacing:${lsVal}px;
+    cursor:move;user-select:none;border:1px dashed transparent;
+    transform:rotate(${rotVal}deg);transform-origin:center center;
+  `;
+  ws.appendChild(el); makeDrag(el,'الرقم الأحمر','back');
+  activeB=el; updatePosDisp('back');
+}
+function regenSerial(){
+  curSerial=rnd7();
+  document.getElementById('serial-disp').textContent=curSerial;
+  const el=document.querySelector('#ws-back .back-serial');
+  if(el) el.textContent=curSerial;
+}
+
+/* ═══════════════════════════════════════════════
+   DRAG SYSTEM
+═══════════════════════════════════════════════ */
+function makeDrag(el,name,sc){
+  let p3=0,p4=0;
+  const selEl=()=>{
+    if(sc==='front'){
+      if(activeF) activeF.classList.remove('selected');
+      activeF=el; el.classList.add('selected');
+      document.getElementById('si-f').style.display='block';
+      document.getElementById('sn-f').textContent=name;
+      updateCtrlsF();
     } else {
-        ws.style.transform = 'none';
-        container.style.height = 'auto';
+      if(activeB) activeB.classList.remove('selected');
+      activeB=el; el.classList.add('selected');
+      updateCtrlsB();
     }
-}
-window.addEventListener('resize', () => {
-    if (document.getElementById('screen-front').style.display !== 'none') adjustScale('ws-front',1000,673);
-    if (document.getElementById('screen-back').style.display  !== 'none') adjustScale('ws-back',1000,673);
-});
-
-// ============================================================
-//  التصدير – PNG / PDF / مشاركة
-// ============================================================
-let shareCanvasDataUrl = '';
-let shareTargetWsId = '';
-
-function captureWorkspace(wsId) {
-    return new Promise((resolve, reject) => {
-        const ws = document.getElementById(wsId);
-        // إزالة التحديد مؤقتاً
-        const sel = ws.querySelector('.selected');
-        if (sel) sel.classList.remove('selected');
-
-        html2canvas(ws, { scale: 3, useCORS: true, backgroundColor: null, allowTaint: false })
-            .then(canvas => {
-                if (sel) sel.classList.add('selected');
-                resolve(canvas.toDataURL('image/png'));
-            })
-            .catch(e => { if (sel) sel.classList.add('selected'); reject(e); });
-    });
+    updatePosDisp(sc);
+  };
+  const doMove=(dx,dy)=>{
+    el.style.left=(el.offsetLeft-dx)+'px';
+    el.style.top=(el.offsetTop-dy)+'px';
+    updatePosDisp(sc);
+  };
+  el.addEventListener('mousedown',e=>{
+    e.preventDefault(); selEl(); p3=e.clientX; p4=e.clientY;
+    const mv=e2=>{doMove(p3-e2.clientX,p4-e2.clientY);p3=e2.clientX;p4=e2.clientY;};
+    const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+    document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+  });
+  el.addEventListener('touchstart',e=>{
+    e.preventDefault(); selEl(); let t=e.touches[0]; p3=t.clientX; p4=t.clientY;
+    const mv=e2=>{e2.preventDefault();let t2=e2.touches[0];
+      doMove(p3-t2.clientX,p4-t2.clientY);p3=t2.clientX;p4=t2.clientY;};
+    const end=()=>{document.removeEventListener('touchmove',mv);document.removeEventListener('touchend',end);};
+    document.addEventListener('touchmove',mv,{passive:false});
+    document.addEventListener('touchend',end,{passive:false});
+  },{passive:false});
 }
 
-function saveImageOf(which) {
-    const wsId = which === 'front' ? 'ws-front' : 'ws-back';
-    const btn = event.target;
-    btn.disabled = true; btn.textContent = '⏳ جاري...';
-    captureWorkspace(wsId).then(dataUrl => {
-        const a = document.createElement('a');
-        a.download = `ID_${which}_${Date.now()}.png`;
-        a.href = dataUrl; a.click();
-        btn.disabled = false; btn.textContent = '💾 حفظ PNG';
-    }).catch(() => { btn.disabled = false; btn.textContent = '💾 حفظ PNG'; });
+function updatePosDisp(sc){
+  const el=sc==='front'?activeF:activeB;
+  if(!el) return;
+  const x=el.offsetLeft, y=el.offsetTop;
+  document.getElementById('pd-'+sc[0]).innerHTML=`X: <b>${x}</b> &nbsp;|&nbsp; Y: <b>${y}</b>`;
+  document.getElementById('cx-'+sc[0]).value=x;
+  document.getElementById('cy-'+sc[0]).value=y;
 }
 
-function saveAsPdf(which) {
-    const wsId = which === 'front' ? 'ws-front' : 'ws-back';
-    const btn = event.target;
-    btn.disabled = true; btn.textContent = '⏳ جاري...';
-    captureWorkspace(wsId).then(dataUrl => {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
-        pdf.addImage(dataUrl, 'PNG', 0, 0, 85.6, 54);
-        pdf.save(`ID_${which}_${Date.now()}.pdf`);
-        btn.disabled = false; btn.textContent = '📄 حفظ PDF';
-    }).catch(() => { btn.disabled = false; btn.textContent = '📄 حفظ PDF'; });
+/* ═══════════════════════════════════════════════
+   CONTROLS – FRONT
+═══════════════════════════════════════════════ */
+function updateCtrlsF(){
+  if(!activeF) return;
+  const s=window.getComputedStyle(activeF);
+  const fs=activeF.tagName==='IMG'?Math.round(parseInt(activeF.style.width||172)/8):Math.round(parseFloat(s.fontSize));
+  document.getElementById('fs-f').value=fs; document.getElementById('fsv-f').textContent=fs;
+  const op=parseFloat(s.opacity);
+  document.getElementById('op-f').value=op; document.getElementById('opv-f').textContent=op.toFixed(2);
+  const m=(s.filter||'').match(/blur\((.+?)px\)/);
+  const bl=m?parseFloat(m[1]):0;
+  document.getElementById('bl-f').value=bl; document.getElementById('blv-f').textContent=bl.toFixed(1);
+  const col=rgb2hex(s.color)||'#000000';
+  document.getElementById('col-f').value=col; document.getElementById('colv-f').textContent=col;
+}
+function applyFs(sc,val){
+  val=parseInt(val);
+  document.getElementById('fsv-'+sc[0]).textContent=val;
+  const el=sc==='front'?activeF:activeB; if(!el) return;
+  if(el.tagName==='IMG') el.style.width=val*8+'px';
+  else el.style.fontSize=val+'px';
+}
+function applyOp(sc,val){
+  val=parseFloat(val);
+  document.getElementById('opv-'+sc[0]).textContent=val.toFixed(2);
+  const el=sc==='front'?activeF:activeB; if(el) el.style.opacity=val;
+}
+function applyBlur(sc,val){
+  val=parseFloat(val);
+  document.getElementById('blv-'+sc[0]).textContent=val.toFixed(1);
+  const el=sc==='front'?activeF:activeB; if(el) el.style.filter=val>0?`blur(${val}px)`:'none';
+}
+function applyColor(sc,val){
+  document.getElementById('colv-'+sc[0]).textContent=val;
+  const el=sc==='front'?activeF:activeB; if(!el) return;
+  if(el.tagName!=='IMG') el.style.color=val;
+}
+function applyRot(sc,val){
+  document.getElementById('rotv-b').textContent=val+'°';
+  if(activeB) activeB.style.transform=`rotate(${val}deg)`;
+}
+function applyLS(sc,val){
+  document.getElementById('lsv-b').textContent=val;
+  if(activeB) activeB.style.letterSpacing=val+'px';
 }
 
-// نافذة المشاركة
-function openShareModal(which) {
-    shareTargetWsId = which === 'front' ? 'ws-front' : 'ws-back';
-    const modal = document.getElementById('share-modal');
-    modal.classList.add('active');
-    const prev = document.getElementById('share-preview');
-    prev.src = '';
-    captureWorkspace(shareTargetWsId).then(dataUrl => {
-        shareCanvasDataUrl = dataUrl;
-        prev.src = dataUrl;
-    });
-}
-function closeShareModal() {
-    document.getElementById('share-modal').classList.remove('active');
-    shareCanvasDataUrl = '';
-}
-function doShareDownloadImg() {
-    if (!shareCanvasDataUrl) return;
-    const a = document.createElement('a');
-    a.download = `ID_${Date.now()}.png`;
-    a.href = shareCanvasDataUrl; a.click();
-}
-function doShareDownloadPdf() {
-    if (!shareCanvasDataUrl) return;
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
-    pdf.addImage(shareCanvasDataUrl, 'PNG', 0, 0, 85.6, 54);
-    pdf.save(`ID_${Date.now()}.pdf`);
-}
-async function doNativeShare() {
-    if (!shareCanvasDataUrl) return;
-    try {
-        const res = await fetch(shareCanvasDataUrl);
-        const blob = await res.blob();
-        const file = new File([blob], `ID_${Date.now()}.png`, { type: 'image/png' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'بطاقة الهوية الفلسطينية' });
-        } else {
-            doShareDownloadImg();
-        }
-    } catch(e) { doShareDownloadImg(); }
+function updateCtrlsB(){
+  if(!activeB) return;
+  const s=window.getComputedStyle(activeB);
+  const fs=Math.round(parseFloat(s.fontSize));
+  document.getElementById('fs-b').value=fs; document.getElementById('fsv-b').textContent=fs;
+  const op=parseFloat(s.opacity);
+  document.getElementById('op-b').value=op; document.getElementById('opv-b').textContent=op.toFixed(2);
+  const m=(activeB.style.transform||'').match(/rotate\((-?[\d.]+)deg\)/);
+  const rot=m?parseFloat(m[1]):-90;
+  document.getElementById('rot-b').value=rot; document.getElementById('rotv-b').textContent=rot+'°';
+  const col=rgb2hex(s.color)||'#cc0000';
+  document.getElementById('col-b').value=col; document.getElementById('colv-b').textContent=col;
+  const ls=parseFloat(s.letterSpacing)||3;
+  document.getElementById('ls-b').value=ls; document.getElementById('lsv-b').textContent=ls;
 }
 
-// إغلاق النافذة بالضغط خارجها
-document.getElementById('share-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeShareModal();
-});
+/* set coords by input */
+function setCoord(sc,axis,val){
+  const el=sc==='front'?activeF:activeB; if(!el) return;
+  val=parseInt(val)||0;
+  if(axis==='x') el.style.left=val+'px'; else el.style.top=val+'px';
+  updatePosDisp(sc);
+}
+
+/* step size */
+function setStep(sc,val,el){
+  stepState[sc]=val;
+  document.querySelectorAll(`#steps-${sc[0]} .step-pill`).forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* nudge */
+function nudge(sc,dir){
+  const el=sc==='front'?activeF:activeB; if(!el) return;
+  const s=stepState[sc]||1;
+  if(dir==='up')    el.style.top =(el.offsetTop -s)+'px';
+  if(dir==='down')  el.style.top =(el.offsetTop +s)+'px';
+  if(dir==='left')  el.style.left=(el.offsetLeft-s)+'px';
+  if(dir==='right') el.style.left=(el.offsetLeft+s)+'px';
+  updatePosDisp(sc);
+}
+
+/* color util */
+function rgb2hex(rgb){
+  const m=rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+  if(!m) return null;
+  return '#'+[m[1],m[2],m[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════ */
+let shareUrl='', shareWs='';
+function capture(wsId){
+  return new Promise((res,rej)=>{
+    const ws=document.getElementById(wsId);
+    const sel=ws.querySelector('.selected'); if(sel) sel.classList.remove('selected');
+    html2canvas(ws,{scale:3,useCORS:true,backgroundColor:null,allowTaint:false})
+      .then(c=>{ if(sel) sel.classList.add('selected'); res(c.toDataURL('image/png')); })
+      .catch(e=>{ if(sel) sel.classList.add('selected'); rej(e); });
+  });
+}
+function saveImg(sc){
+  const wid=sc==='front'?'ws-front':'ws-back';
+  const btn=event.target; btn.disabled=true; btn.textContent='⏳ جاري...';
+  capture(wid).then(u=>{ dl(u,`ID_${sc}_${Date.now()}.png`); btn.disabled=false; btn.textContent='💾 PNG عالي الجودة'; })
+    .catch(()=>{ btn.disabled=false; btn.textContent='💾 PNG عالي الجودة'; });
+}
+function savePdf(sc){
+  const wid=sc==='front'?'ws-front':'ws-back';
+  const btn=event.target; btn.disabled=true; btn.textContent='⏳ جاري...';
+  capture(wid).then(u=>{
+    const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[85.6,54]});
+    pdf.addImage(u,'PNG',0,0,85.6,54);
+    pdf.save(`ID_${sc}_${Date.now()}.pdf`);
+    btn.disabled=false; btn.textContent='📄 PDF بطاقة';
+  }).catch(()=>{ btn.disabled=false; btn.textContent='📄 PDF بطاقة'; });
+}
+function dl(url,name){ const a=document.createElement('a'); a.href=url; a.download=name; a.click(); }
+
+function openShare(sc){
+  shareWs=sc==='front'?'ws-front':'ws-back';
+  document.getElementById('share-modal').classList.add('on');
+  document.getElementById('mprev').src='';
+  capture(shareWs).then(u=>{ shareUrl=u; document.getElementById('mprev').src=u; });
+}
+function closeShare(){ document.getElementById('share-modal').classList.remove('on'); shareUrl=''; }
+function doDlImg(){ if(shareUrl) dl(shareUrl,`ID_${Date.now()}.png`); }
+function doDlPdf(){
+  if(!shareUrl) return;
+  const{jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[85.6,54]});
+  pdf.addImage(shareUrl,'PNG',0,0,85.6,54); pdf.save(`ID_${Date.now()}.pdf`);
+}
+async function doNativeShare(){
+  if(!shareUrl) return;
+  try{
+    const r=await fetch(shareUrl); const b=await r.blob();
+    const f=new File([b],`ID_${Date.now()}.png`,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:'بطاقة الهوية الفلسطينية'});
+    else doDlImg();
+  }catch(e){ doDlImg(); }
+}
+document.getElementById('share-modal').addEventListener('click',function(e){ if(e.target===this) closeShare(); });
 </script>
 </body>
 </html>
