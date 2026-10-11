@@ -748,7 +748,42 @@ function rgb2hex(rgb){const m=rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);if(!
 
 /* ═══ EXPORT ═══ */
 let shrUrl='',shrWs='';
-function capture(wsId){return new Promise((res,rej)=>{const ws=document.getElementById(wsId);const sel=ws.querySelector('.selected');if(sel)sel.classList.remove('selected');html2canvas(ws,{scale:3,useCORS:true,backgroundColor:null}).then(c=>{if(sel)sel.classList.add('selected');res(c.toDataURL('image/png'));}).catch(e=>{if(sel)sel.classList.add('selected');rej(e);});});}
+function capture(wsId){return new Promise((res,rej)=>{
+  const ws=document.getElementById(wsId);
+  const sc=wsId==='ws-front'?'front':'back';
+  const p=sc==='front'?'f':'b';
+  const wi=document.getElementById('wi-'+p);
+  // احفظ الـ zoom الحالي وأعده لـ 100% مؤقتاً قبل الالتقاط
+  const prevZ=ZS[sc];
+  const prevTransform=wi.style.transform;
+  const prevW=wi.style.width;
+  const prevH=wi.style.height;
+  wi.style.transform='scale(1)';
+  wi.style.transformOrigin='top left';
+  wi.style.width=ws.offsetWidth+'px';
+  wi.style.height=ws.offsetHeight+'px';
+  const sel=ws.querySelector('.selected');
+  if(sel)sel.classList.remove('selected');
+  // انتظر frame واحد حتى يُطبّق الـ DOM التغيير
+  requestAnimationFrame(()=>{
+    html2canvas(ws,{scale:3,useCORS:true,allowTaint:true,backgroundColor:null,
+      width:ws.offsetWidth,height:ws.offsetHeight,
+      scrollX:0,scrollY:0}).then(c=>{
+      // أعد الـ zoom السابق
+      wi.style.transform=prevTransform;
+      wi.style.width=prevW;
+      wi.style.height=prevH;
+      if(sel)sel.classList.add('selected');
+      res(c.toDataURL('image/png'));
+    }).catch(e=>{
+      wi.style.transform=prevTransform;
+      wi.style.width=prevW;
+      wi.style.height=prevH;
+      if(sel)sel.classList.add('selected');
+      rej(e);
+    });
+  });
+});}
 function saveImg(sc){const wid=sc==='front'?'ws-front':'ws-back';const btn=event.target;btn.disabled=true;btn.textContent='⏳';capture(wid).then(u=>{dl(u,`ID_${sc}.png`);btn.disabled=false;btn.textContent='💾 PNG';}).catch(()=>{btn.disabled=false;btn.textContent='💾 PNG';});}
 function savePdf(sc){const wid=sc==='front'?'ws-front':'ws-back';const btn=event.target;btn.disabled=true;btn.textContent='⏳';capture(wid).then(u=>{const{jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[85.6,54]});pdf.addImage(u,'PNG',0,0,85.6,54);pdf.save(`ID_${sc}.pdf`);btn.disabled=false;btn.textContent='📄 PDF';}).catch(()=>{btn.disabled=false;btn.textContent='📄 PDF';});}
 function dl(url,name){const a=document.createElement('a');a.href=url;a.download=name;a.click();}
