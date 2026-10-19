@@ -820,7 +820,7 @@ function capture(wsId){return new Promise((res,rej)=>{
   if(sel)sel.classList.remove('selected');
   // انتظر frame واحد حتى يُطبّق الـ DOM التغيير
   requestAnimationFrame(()=>{
-    html2canvas(ws,{scale:9.6,useCORS:true,allowTaint:true,backgroundColor:null,
+    html2canvas(ws,{scale:12,useCORS:true,allowTaint:true,backgroundColor:null,
       width:ws.offsetWidth,height:ws.offsetHeight,
       imageTimeout:0,logging:false,
       scrollX:0,scrollY:0}).then(c=>{
