@@ -679,8 +679,8 @@ function sched(){
 }
 function saveData(){
   try{localStorage.setItem('pal_id',JSON.stringify(col()));}catch(e){}
-  // حفظ الصورة الأصلية في IndexedDB
-  if(photoOrigUrl) idbPut('photo',photoOrigUrl).catch(()=>{});
+  // حفظ الـ File object مباشرة في IndexedDB بدون تحويل
+  if(photoFile) idbPut('photo_file',photoFile).catch(()=>{});
 }
 function flash(){const e=document.getElementById('ss');if(!e)return;const n=new Date();e.textContent=`✅ حُفظ: ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;e.classList.add('ok');setTimeout(()=>e.classList.remove('ok'),2000);}
 function col(){return{in:v('id-n'),fa:v('fn-a'),fh:v('fn-h'),da:v('dd-a'),dh:v('dd-h'),ga:v('gd-a'),gh:v('gd-h'),ma:v('fm-a'),mh:v('fm-h'),oa:v('mm-a'),oh:v('mm-h'),ba:v('db-a'),bh:v('db-h'),pa:v('pb-a'),ph:v('pb-h'),na:v('gn-a'),nh:v('gn-h'),ra:v('rl-a'),rh:v('rl-h'),ia:v('ip-a'),ih:v('ip-h'),ta:v('id-a'),th:v('id-h')};}
@@ -690,36 +690,39 @@ function applyFields(d){for(const[id,k]of Object.entries(FIELD_MAP)){const el=do
 function loadForm(){try{const r=localStorage.getItem('pal_id');if(r)applyFields(JSON.parse(r));}catch(e){}}
 function preloadData(){try{const r=localStorage.getItem('pal_id');if(r)applyFields(JSON.parse(r));}catch(e){}}
 
-function applyPhoto(url){
-  if(!url)return;
-  photoOrigUrl=url;
-  photoUrl=url;
+// photoFile = File object الأصلي (للحفظ في IDB)
+// photoOrigUrl = blob: URL للعرض والتصدير بجودة كاملة
+let photoFile=null;
+let photoOrigUrl='';
+let photoUrl='';
+
+function applyPhotoFile(file){
+  if(!file)return;
+  photoFile=file;
+  // أنشئ blob: URL للعرض والتصدير بدون أي ضغط
+  if(photoOrigUrl) URL.revokeObjectURL(photoOrigUrl);
+  photoOrigUrl=URL.createObjectURL(file);
+  photoUrl=photoOrigUrl;
   const p=document.getElementById('pp');
-  if(p){p.src=url;p.style.display='block';}
+  if(p){p.src=photoOrigUrl;p.style.display='block';}
   const pt=document.getElementById('ptxt');
   if(pt)pt.style.display='none';
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   preloadData();
-  // فتح IndexedDB واستعادة الصورة الأصلية
-  openIDB().then(()=>idbGet('photo')).then(url=>{
-    if(url) applyPhoto(url);
+  // فتح IndexedDB واستعادة الـ File object
+  openIDB().then(()=>idbGet('photo_file')).then(file=>{
+    if(file) applyPhotoFile(file);
   }).catch(()=>{});
 });
 
 document.querySelectorAll('#sc-form input[type=text]').forEach(i=>i.addEventListener('input',sched));
-let photoUrl='';
-let photoOrigUrl='';
 
 document.getElementById('pi').addEventListener('change',function(e){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    applyPhoto(ev.target.result);
-    sched();
-  };
-  r.readAsDataURL(f);
+  applyPhotoFile(f);
+  sched();
 });
 
 /* ═══ ZOOM ═══ */
@@ -731,7 +734,7 @@ window.addEventListener('resize',()=>{['front','back'].forEach(sc=>{if(document.
 
 /* ═══ FRONT BUILD ═══ */
 let actF=null;
-function buildFront(){const ws=document.getElementById('ws-front');ws.innerHTML='';actF=null;let raw;try{raw=localStorage.getItem('pal_id');}catch(e){}if(!raw)raw=JSON.stringify(col());const d=JSON.parse(raw);const ph=photoUrl||localStorage.getItem('pal_ph');const photoSrc=photoOrigUrl||ph;
+function buildFront(){const ws=document.getElementById('ws-front');ws.innerHTML='';actF=null;let raw;try{raw=localStorage.getItem('pal_id');}catch(e){}if(!raw)raw=JSON.stringify(col());const d=JSON.parse(raw);const photoSrc=photoOrigUrl||photoUrl;
 if(photoSrc){const img=document.createElement('img');img.src=photoSrc;img.id='front-img';img.className='draggable';img.style.cssText='display:block;position:absolute;left:60px;top:90px;width:172px;height:226px;object-fit:cover;border:1px solid #1e293b;';ws.appendChild(img);drag(img,'الصورة','front');}
 const stamp=document.createElement('img');stamp.src='https://i.imgur.com/27BB2UJ.png';stamp.className='draggable';stamp.style.cssText='position:absolute;left:690px;top:430px;width:180px;';ws.appendChild(stamp);drag(stamp,'الختم','front');
 const F=[
@@ -817,7 +820,7 @@ function capture(wsId){return new Promise((res,rej)=>{
   if(sel)sel.classList.remove('selected');
   // انتظر frame واحد حتى يُطبّق الـ DOM التغيير
   requestAnimationFrame(()=>{
-    html2canvas(ws,{scale:5,useCORS:true,allowTaint:true,backgroundColor:null,
+    html2canvas(ws,{scale:9.6,useCORS:true,allowTaint:true,backgroundColor:null,
       width:ws.offsetWidth,height:ws.offsetHeight,
       imageTimeout:0,logging:false,
       scrollX:0,scrollY:0}).then(c=>{
