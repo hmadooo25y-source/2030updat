@@ -7,13 +7,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 :root{
   --g:#2e7d32;--gd:#1b5e20;--gl:#e8f5e9;
   --blue:#1565c0;--red:#b91c1c;
   --bar:44px;
 }
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Arial',sans-serif;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;background:#000;overflow:hidden}
 
 /* ══════════ CLOCK ══════════ */
@@ -290,7 +289,7 @@ input[type=text]:focus{border-color:var(--g);background:#fff;box-shadow:0 0 0 2p
 .draggable{position:absolute;cursor:move;user-select:none;
   padding:1px 4px;border:1px dashed transparent;text-align:right;direction:rtl;line-height:1.1}
 .ar-el{font-family:'Arial',sans-serif;font-weight:bold}
-.he-el{font-family:'Arial Hebrew','Arial',sans-serif;font-weight:bold}
+.he-el{font-family:'David','David Bold','Arial Hebrew','Arial',sans-serif;font-weight:bold}
 .draggable.selected{border-color:#ef4444;background:rgba(239,68,68,.09);border-radius:3px;z-index:999}
 #front-img{width:172px;height:226px;object-fit:cover;border:1px solid #1e293b;display:none}
 .back-serial{position:absolute;color:#cc0000;font-weight:900;
@@ -660,17 +659,65 @@ function switchTab(sc,tab,btn){
   if(tab==='card') setTimeout(()=>fitZ(sc),60);
 }
 
+/* ═══ IndexedDB ═══ */
+const IDB_NAME='pal_store',IDB_VER=1,IDB_STORE='data';
+let idb=null;
+function openIDB(){return new Promise((res,rej)=>{try{const req=indexedDB.open(IDB_NAME,IDB_VER);req.onupgradeneeded=e=>{e.target.result.createObjectStore(IDB_STORE);};req.onsuccess=e=>{idb=e.target.result;res(idb);};req.onerror=()=>rej(req.error);}catch(e){rej(e);}});}
+function idbPut(key,val){return new Promise((res,rej)=>{if(!idb){res();return;}try{const tx=idb.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(val,key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);}catch(e){rej(e);}});}
+function idbGet(key){return new Promise((res,rej)=>{if(!idb){res(null);return;}try{const tx=idb.transaction(IDB_STORE,'readonly');const req=tx.objectStore(IDB_STORE).get(key);req.onsuccess=()=>res(req.result??null);req.onerror=()=>rej(req.error);}catch(e){rej(e);}});}
+
 /* ═══ AUTOSAVE ═══ */
 let ast;
-function sched(){clearTimeout(ast);ast=setTimeout(()=>{saveData();flash();},700);}
-function saveData(){try{localStorage.setItem('pal_id',JSON.stringify(col()));if(photoUrl)localStorage.setItem('pal_ph',photoUrl);}catch(e){}}
-function flash(){const e=document.getElementById('ss');const n=new Date();e.textContent=`✅ حُفظ: ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;e.classList.add('ok');setTimeout(()=>e.classList.remove('ok'),2000);}
+function sched(){
+  saveData();
+  flash();
+  clearTimeout(ast);
+  ast=setTimeout(()=>{saveData();},300);
+}
+function saveData(){
+  try{localStorage.setItem('pal_id',JSON.stringify(col()));}catch(e){}
+  // حفظ الصورة الأصلية في IndexedDB
+  if(photoOrigUrl) idbPut('photo',photoOrigUrl).catch(()=>{});
+}
+function flash(){const e=document.getElementById('ss');if(!e)return;const n=new Date();e.textContent=`✅ حُفظ: ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;e.classList.add('ok');setTimeout(()=>e.classList.remove('ok'),2000);}
 function col(){return{in:v('id-n'),fa:v('fn-a'),fh:v('fn-h'),da:v('dd-a'),dh:v('dd-h'),ga:v('gd-a'),gh:v('gd-h'),ma:v('fm-a'),mh:v('fm-h'),oa:v('mm-a'),oh:v('mm-h'),ba:v('db-a'),bh:v('db-h'),pa:v('pb-a'),ph:v('pb-h'),na:v('gn-a'),nh:v('gn-h'),ra:v('rl-a'),rh:v('rl-h'),ia:v('ip-a'),ih:v('ip-h'),ta:v('id-a'),th:v('id-h')};}
 function v(id){const e=document.getElementById(id);return e?e.value:'';}
-function loadForm(){try{const r=localStorage.getItem('pal_id');if(!r)return;const d=JSON.parse(r);const mp={'id-n':'in','fn-a':'fa','fn-h':'fh','dd-a':'da','dd-h':'dh','gd-a':'ga','gd-h':'gh','fm-a':'ma','fm-h':'mh','mm-a':'oa','mm-h':'oh','db-a':'ba','db-h':'bh','pb-a':'pa','pb-h':'ph','gn-a':'na','gn-h':'nh','rl-a':'ra','rl-h':'rh','ip-a':'ia','ip-h':'ih','id-a':'ta','id-h':'th'};for(const[id,k]of Object.entries(mp)){const el=document.getElementById(id);if(el&&d[k]!==undefined)el.value=d[k];}const ph=localStorage.getItem('pal_ph');if(ph){photoUrl=ph;const p=document.getElementById('pp');p.src=ph;p.style.display='block';document.getElementById('ptxt').style.display='none';}}catch(e){}}
+const FIELD_MAP={'id-n':'in','fn-a':'fa','fn-h':'fh','dd-a':'da','dd-h':'dh','gd-a':'ga','gd-h':'gh','fm-a':'ma','fm-h':'mh','mm-a':'oa','mm-h':'oh','db-a':'ba','db-h':'bh','pb-a':'pa','pb-h':'ph','gn-a':'na','gn-h':'nh','rl-a':'ra','rl-h':'rh','ip-a':'ia','ip-h':'ih','id-a':'ta','id-h':'th'};
+function applyFields(d){for(const[id,k]of Object.entries(FIELD_MAP)){const el=document.getElementById(id);if(el&&d[k]!==undefined)el.value=d[k];}}
+function loadForm(){try{const r=localStorage.getItem('pal_id');if(r)applyFields(JSON.parse(r));}catch(e){}}
+function preloadData(){try{const r=localStorage.getItem('pal_id');if(r)applyFields(JSON.parse(r));}catch(e){}}
+
+function applyPhoto(url){
+  if(!url)return;
+  photoOrigUrl=url;
+  photoUrl=url;
+  const p=document.getElementById('pp');
+  if(p){p.src=url;p.style.display='block';}
+  const pt=document.getElementById('ptxt');
+  if(pt)pt.style.display='none';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  preloadData();
+  // فتح IndexedDB واستعادة الصورة الأصلية
+  openIDB().then(()=>idbGet('photo')).then(url=>{
+    if(url) applyPhoto(url);
+  }).catch(()=>{});
+});
+
 document.querySelectorAll('#sc-form input[type=text]').forEach(i=>i.addEventListener('input',sched));
-let photoUrl=localStorage.getItem('pal_ph')||'';
-document.getElementById('pi').addEventListener('change',function(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{photoUrl=ev.target.result;const p=document.getElementById('pp');p.src=photoUrl;p.style.display='block';document.getElementById('ptxt').style.display='none';sched();};r.readAsDataURL(f);});
+let photoUrl='';
+let photoOrigUrl='';
+
+document.getElementById('pi').addEventListener('change',function(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    applyPhoto(ev.target.result);
+    sched();
+  };
+  r.readAsDataURL(f);
+});
 
 /* ═══ ZOOM ═══ */
 const ZS={front:100,back:100};
@@ -681,7 +728,8 @@ window.addEventListener('resize',()=>{['front','back'].forEach(sc=>{if(document.
 
 /* ═══ FRONT BUILD ═══ */
 let actF=null;
-function buildFront(){const ws=document.getElementById('ws-front');ws.innerHTML='';actF=null;let raw;try{raw=localStorage.getItem('pal_id');}catch(e){}if(!raw)raw=JSON.stringify(col());const d=JSON.parse(raw);const ph=photoUrl||localStorage.getItem('pal_ph');if(ph){const img=document.createElement('img');img.src=ph;img.id='front-img';img.className='draggable';img.style.cssText='display:block;position:absolute;left:60px;top:90px;width:172px;height:226px;object-fit:cover;border:1px solid #1e293b;';ws.appendChild(img);drag(img,'الصورة','front');}
+function buildFront(){const ws=document.getElementById('ws-front');ws.innerHTML='';actF=null;let raw;try{raw=localStorage.getItem('pal_id');}catch(e){}if(!raw)raw=JSON.stringify(col());const d=JSON.parse(raw);const ph=photoUrl||localStorage.getItem('pal_ph');const photoSrc=photoOrigUrl||ph;
+if(photoSrc){const img=document.createElement('img');img.src=photoSrc;img.id='front-img';img.className='draggable';img.style.cssText='display:block;position:absolute;left:60px;top:90px;width:172px;height:226px;object-fit:cover;border:1px solid #1e293b;';ws.appendChild(img);drag(img,'الصورة','front');}
 const stamp=document.createElement('img');stamp.src='https://i.imgur.com/27BB2UJ.png';stamp.className='draggable';stamp.style.cssText='position:absolute;left:690px;top:430px;width:180px;';ws.appendChild(stamp);drag(stamp,'الختم','front');
 const F=[
   {t:d.in, top:'235px',left:'600px',l:'ar',n:'رقم الهوية'},
